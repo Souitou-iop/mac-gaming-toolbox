@@ -18,7 +18,8 @@ public actor GamingService {
     public static let hoyoDomains = [
         "globaldp-prod-cn01.bhsr.com", "globaldp-prod-os01.starrails.com",
         "dispatchcnglobal.yuanshen.com", "dispatchosglobal.yuanshen.com",
-        "globaldp-prod-cn02.juequling.com", "globaldp-prod-os01.zenlesszonezero.com"
+        "globaldp-prod-cn01.juequling.com", "globaldp-prod-cn02.juequling.com",
+        "globaldp-prod-os01.zenlesszonezero.com", "globaldp-prod-os02.zenlesszonezero.com"
     ]
 
     private let runner: any CommandRunning

@@ -6,6 +6,9 @@ struct ChangelogView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("3.0.7") {
+                    Text(tr("HoYoGames 启动帮助部分功能修复", "Fixed parts of the HoYoGames Launch Assistant"))
+                }
                 Section("3.0.6") {
                     Text(tr("移除默认挂载路径数量限制，支持添加任意数量的默认路径", "Removed the default mount-path limit, allowing any number of default paths to be added"))
                     Text(tr("默认路径保存、重新加载和旧配置导入不再截断为三项", "Default paths are no longer truncated to three entries when saved, reloaded, or imported from legacy configuration"))

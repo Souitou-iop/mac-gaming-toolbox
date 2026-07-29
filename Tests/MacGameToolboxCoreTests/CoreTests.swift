@@ -167,6 +167,16 @@ import Testing
     #expect(HostsFileEditor.replacingManagedBlock(in: enabled, domains: domains, enabled: false) == original)
 }
 
+@Test func hoYoDomainsIncludeAllLaunchAssistanceEndpoints() {
+    let expectedDomains = [
+        "globaldp-prod-cn01.juequling.com",
+        "globaldp-prod-cn02.juequling.com",
+        "globaldp-prod-os01.zenlesszonezero.com",
+        "globaldp-prod-os02.zenlesszonezero.com",
+    ]
+    #expect(expectedDomains.allSatisfy(GamingService.hoyoDomains.contains))
+}
+
 @Test func processParserFiltersCrossOver() {
     let text = "  100 1 /Applications/CrossOver 25.app/Contents/MacOS/CrossOver\n  110 100 /Applications/CrossOver 25.app/Contents/SharedSupport/CrossOver/bin/cxoffice\n  120 110 /Applications/CrossOver 25.app/Contents/SharedSupport/CrossOver/bin/wine64-preloader\n  200 1 /usr/local/bin/wine game.exe\n  300 1 unrelated"
     let processes = GamingService.parseProcessTable(text)
