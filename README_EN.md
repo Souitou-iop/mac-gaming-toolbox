@@ -61,18 +61,6 @@ Video tutorial: [Mac Gaming Toolbox major release—MetalHUD, HoYo game launchin
 swift test --disable-sandbox
 ```
 
-## Release Signing and Notarization
-
-For release distribution, developers must provide their own Apple Developer ID Application certificate and save a notarization profile in the local Keychain with `notarytool`. The repository does not include certificates, private keys, keychains, Team IDs, or notarization credentials.
-
-```bash
-export DEVELOPER_ID_APPLICATION='Developer ID Application: Your Name (TEAMID)'
-export NOTARY_KEYCHAIN_PROFILE='your-notary-profile'
-./Scripts/sign-and-notarize.sh '/path/to/Mac 游戏工具箱.app' 'MacGameToolbox-3.0.7.dmg'
-```
-
-Never commit real certificates, notarization passwords, App Store Connect API keys, or environment-variable files to the repository.
-
 ## Important Notes
 
 - Cache and log cleanup is irreversible and may remove login state, game caches, and diagnostic logs. Quit games and other apps and back up important data before continuing.

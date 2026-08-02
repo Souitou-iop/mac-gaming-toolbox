@@ -61,18 +61,6 @@ swift build
 swift test --disable-sandbox
 ```
 
-## 正式签名与公证
-
-正式分发需要开发者自行准备 Apple Developer ID Application 证书，并使用 `notarytool` 在本机钥匙串中保存公证配置。仓库不会包含证书、私钥、钥匙串、Team ID 或公证凭据。
-
-```bash
-export DEVELOPER_ID_APPLICATION='Developer ID Application: Your Name (TEAMID)'
-export NOTARY_KEYCHAIN_PROFILE='your-notary-profile'
-./Scripts/sign-and-notarize.sh '/path/to/Mac 游戏工具箱.app' 'MacGameToolbox-3.0.7.dmg'
-```
-
-请勿把真实证书、公证密码、App Store Connect API Key 或环境变量文件提交到仓库。
-
 ## 注意事项
 
 - 缓存与日志清理属于不可撤销的高风险操作，可能导致登录状态、游戏缓存和诊断日志丢失。执行前请退出游戏及其他应用，并备份重要数据。
