@@ -133,9 +133,18 @@ final class AppModel: ObservableObject {
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         panel.prompt = tr("选择", "Choose")
+        panel.directoryURL = URL(fileURLWithPath: Self.defaultReportURLPath, isDirectory: true)
         guard panel.runModal() == .OK, let url = panel.url else { return }
         var options = configuration.metalHUDOptions
         options.reportURL = url.path
+        updateMetalHUDOptions(options)
+    }
+
+    func useDefaultReportURL() {
+        let path = Self.defaultReportURLPath
+        try? FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
+        var options = configuration.metalHUDOptions
+        options.reportURL = path
         updateMetalHUDOptions(options)
     }
 
@@ -143,6 +152,52 @@ final class AppModel: ObservableObject {
         var options = configuration.metalHUDOptions
         options.reportURL = nil
         updateMetalHUDOptions(options)
+    }
+
+    func revealReportURLInFinder() {
+        guard let path = configuration.metalHUDOptions.reportURL else { return }
+        try? FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: path)
+    }
+
+    private static var defaultReportURLPath: String {
+        let support = NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory, .userDomainMask, true).first
+            ?? NSTemporaryDirectory()
+        return (support as NSString).appendingPathComponent("MacGameToolbox/HUDReports")
+    }
+
+    func openConsoleApp() {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Console") else { return }
+        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+    }
+
+    func exportRecentHUDLogs() {
+        let task = Process()
+        task.launchPath = "/usr/bin/log"
+        task.arguments = ["show", "--predicate", "subsystem == \"com.apple.metal.hud\"", "--last", "10m", "--style", "syslog"]
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = pipe
+        do {
+            try task.run()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            task.waitUntilExit()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            let support = NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory, .userDomainMask, true).first
+                ?? NSTemporaryDirectory()
+            let dir = (support as NSString).appendingPathComponent("MacGameToolbox/HUDLogs")
+            try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyyMMdd_HHmmss"
+            let fileName = "MetalHUD_\(formatter.string(from: Date())).log"
+            let filePath = (dir as NSString).appendingPathComponent(fileName)
+            let header = "Metal HUD Logs (last 10 minutes)\nExported: \(Date())\nFilter: subsystem == \"com.apple.metal.hud\"\n=========================================\n\n"
+            let content = header + (output.isEmpty ? "(no logs found)" : output)
+            try? content.write(toFile: filePath, atomically: true, encoding: .utf8)
+            NSWorkspace.shared.open(URL(fileURLWithPath: filePath))
+        } catch {
+            report(error)
+        }
     }
 
     func removeRecentMetalHUDApp(_ app: RecentMetalHUDApp) {

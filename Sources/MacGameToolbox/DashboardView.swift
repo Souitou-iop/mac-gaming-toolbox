@@ -107,7 +107,7 @@ struct DashboardView: View {
     }
 
     @ViewBuilder private var featureCards: some View {
-        FeatureCard(icon: "gauge.with.dots.needle.67percent", title: tr("MetalHUD性能监视器", "MetalHUD Performance Monitor"), subtitle: tr("开发者工具，可以查看游戏帧率等信息，也可以帮助你找到游戏异常的原因", "A developer tool for viewing game frame rates and diagnosing game issues")) {
+        FeatureCard(icon: "gauge.with.dots.needle.67percent", title: tr("MetalHUD 性能监视器", "MetalHUD Performance Monitor"), subtitle: tr("开发者工具，可以查看游戏帧率等信息，也可以帮助你找到游戏异常的原因", "A developer tool for viewing game frame rates and diagnosing game issues")) {
             HStack {
                 Toggle(tr("全局启用", "Enable globally"), isOn: Binding(get: { model.metalHUDEnabled }, set: { value in model.setMetalHUD(value) })).toggleStyle(.switch)
                 Spacer()
@@ -144,14 +144,14 @@ struct DashboardView: View {
                 Button(tr("手动选择进程", "Select processes")) { model.loadProcessesForManualSelection() }
             }
         }
-        FeatureCard(icon: "externaldrive.fill", title: tr("将磁盘挂载指定路径", "Mount a Disk at a Specified Path"), subtitle: tr("此方法可自定义外接磁盘的挂载路径，可将部分原本不可放在外接磁盘的游戏资源转移到外接磁盘以节省内置磁盘储存空间", "Customize an external disk's mount path and move supported game resources there to save internal storage space")) {
+        FeatureCard(icon: "externaldrive.fill", title: tr("将磁盘挂载到指定路径", "Mount a Disk at a Specified Path"), subtitle: tr("此方法可自定义外接磁盘的挂载路径，可将部分原本不可放在外接磁盘的游戏资源转移到外接磁盘以节省内置磁盘存储空间", "Customize an external disk's mount path and move supported game resources there to save internal storage space")) {
             HStack(alignment: .bottom) {
                 Button(tr("管理磁盘", "Manage volumes")) { model.loadDisks() }
                 Spacer()
                 Button(tr("恢复上次挂载", "Restore last mount")) { model.restorePreviousMounts() }
             }
         }
-        FeatureCard(icon: "trash.fill", title: tr("缓存日志一键清理", "One-click Cache and Log Cleanup"), subtitle: tr("默认仅清理用户缓存和日志；关闭敏感文件排除后将执行高风险完整清理", "Cleans user caches and logs by default; disabling sensitive-file exclusion performs the high-risk full cleanup")) {
+        FeatureCard(icon: "trash.fill", title: tr("缓存与日志一键清理", "One-click Cache and Log Cleanup"), subtitle: tr("默认仅清理用户缓存和日志；关闭敏感文件排除后将执行高风险完整清理", "Cleans user caches and logs by default; disabling sensitive-file exclusion performs the high-risk full cleanup")) {
             HStack(alignment: .bottom) {
                 Button(tr("一键清理", "Clean now"), role: .destructive) { model.prepareCacheScan() }
                 Spacer()
@@ -433,7 +433,7 @@ private struct MetalHUDTunerView: View {
                     advancedSection
                 }
                 .padding(.bottom, 4)
-                .padding(.trailing, 28)
+                .padding(.horizontal, 28)
             }
         }
         .padding(22)
@@ -452,7 +452,7 @@ private struct MetalHUDTunerView: View {
                     Slider(value: opacityBinding, in: 0...1, step: 0.05)
                         .frame(maxWidth: 180)
                     Text("\(opacityPercentage)%")
-                        .font(.callout.monospacedDigit())
+                        .monospacedDigit()
                         .frame(width: 44, alignment: .trailing)
                         .foregroundStyle(.secondary)
                     InfoHint(text: tr("调整 HUD 覆盖层的透明度。1.0 为完全不透明，0.0 为完全透明。", "Adjust the HUD overlay opacity. 1.0 is fully opaque, 0.0 is fully transparent."))
@@ -464,7 +464,7 @@ private struct MetalHUDTunerView: View {
                     Slider(value: scaleBinding, in: 0...1, step: 0.05)
                         .frame(maxWidth: 180)
                     Text("\(scalePercentage)%")
-                        .font(.callout.monospacedDigit())
+                        .monospacedDigit()
                         .frame(width: 44, alignment: .trailing)
                         .foregroundStyle(.secondary)
                     InfoHint(text: tr("HUD 大小，按可绘制宽度百分比。默认 0.2，最小宽度 300 像素。", "HUD size as percentage of drawable width. Default 0.2, min 300px."))
@@ -549,7 +549,7 @@ private struct MetalHUDTunerView: View {
                 }
                 Spacer()
                 Text(tr("已选 \(selectedElementCount) 项", "\(selectedElementCount) selected"))
-                    .font(.callout)
+                    .font(.caption)
                     .foregroundStyle(selectedElementCount > 0 ? .primary : .secondary)
                     .monospacedDigit()
                     .frame(width: 90, alignment: .trailing)
@@ -573,32 +573,82 @@ private struct MetalHUDTunerView: View {
     @ViewBuilder
     private var logsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionHeader(tr("日志与性能", "Logs & Performance"))
-            VStack(spacing: 8) {
-                toggleRow(tr("帧统计日志", "Frame statistics log"), boolBinding(\.logEnabled),
-                          tr("将每帧的性能统计输出到控制台日志，便于事后分析。需要先启用 HUD。", "Log per-frame performance statistics to the console for later analysis. Requires HUD to be enabled."))
-                toggleRow(tr("着色器编译日志", "Shader compile log"), boolBinding(\.shaderLogEnabled),
-                          tr("记录着色器编译活动，帮助定位编译耗时问题。需要先启用 HUD。", "Log shader compilation activity to help diagnose compile-time costs. Requires HUD to be enabled."))
-                toggleRow(tr("编码器 GPU 时间追踪", "Encoder GPU time tracking"), boolBinding(\.encoderTimingEnabled),
-                          tr("开启编码器级 GPU 时间追踪，是 GPU 时间线、顶部标记等指标的前提。", "Enable encoder-level GPU time tracking. Required for GPU timeline and top-labeled metrics."))
-                toggleRow(tr("性能洞察", "Performance insights"), boolBinding(\.insightsEnabled),
-                          tr("跟踪 Metal API 使用并高亮潜在性能瓶颈。", "Track Metal API usage and highlight potential bottlenecks."))
-                toggleRow(tr("显示零值指标", "Show zero-value metrics"), boolBinding(\.showZeroMetrics),
-                          tr("显示值为 0 的指标。默认隐藏可能不可用的指标。", "Show metrics with value 0. Hidden by default."))
-                toggleRow(tr("显示指标范围", "Show metrics range"), boolBinding(\.showMetricsRange),
-                          tr("报告最近 1200 帧的指标范围。", "Report metric range over the last 1200 frames."))
-                toggleRow(tr("禁用菜单栏 HUD 菜单", "Disable menu bar HUD menu"), boolBinding(\.disableMenuBar),
-                          tr("隐藏菜单栏的 Metal HUD 菜单项。", "Hide the Metal HUD menu bar item."))
+            HStack {
+                Text(tr("日志与性能", "Logs & Performance"))
+                    .font(.headline)
+                Spacer()
+                Button(tr("打开控制台", "Open Console")) { model.openConsoleApp() }
+                    .controlSize(.small)
+                Button(tr("导出近期日志", "Export Recent")) { model.exportRecentHUDLogs() }
+                    .controlSize(.small)
+            }
+            Text(tr("打开控制台：启动 Console.app，手动搜索「metal-hud」查看实时日志。导出近期日志：将最近 10 分钟的 HUD 日志导出为 .log 文件并自动打开。",
+                    "Open Console: launches Console.app, manually search \"metal-hud\" for live logs. Export Recent: exports the last 10 minutes of HUD logs as a .log file and opens it."))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(tr("日志", "Logs"))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    toggleRow(tr("帧统计日志", "Frame statistics log"), boolBinding(\.logEnabled),
+                              tr("将每帧的性能统计输出到系统统一日志（subsystem: com.apple.metal.hud），可在控制台 App 中过滤查看。", "Logs per-frame statistics to the unified logging system (subsystem: com.apple.metal.hud). View in Console app."),
+                              dependency: !model.metalHUDEnabled ? tr("需启用 HUD", "Needs HUD") : nil)
+                    toggleRow(tr("着色器编译日志", "Shader compile log"), boolBinding(\.shaderLogEnabled),
+                              tr("记录着色器编译活动到系统统一日志，帮助定位编译耗时问题。", "Logs shader compilation activity to the unified logging system to help diagnose compile-time costs."),
+                              dependency: !model.metalHUDEnabled ? tr("需启用 HUD", "Needs HUD") : nil)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(tr("追踪", "Tracking"))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    toggleRow(tr("编码器 GPU 时间追踪", "Encoder GPU time tracking"), boolBinding(\.encoderTimingEnabled),
+                              tr("开启编码器级 GPU 时间追踪，是 GPU 时间线、高占用命令缓冲区/编码器等指标的前提。", "Enable encoder-level GPU time tracking. Required for GPU timeline and top-labeled metrics."))
+                    toggleRow(tr("性能洞察", "Performance insights"), boolBinding(\.insightsEnabled),
+                              tr("跟踪 Metal API 使用并高亮潜在性能瓶颈。", "Track Metal API usage and highlight potential bottlenecks."))
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(tr("显示选项", "Display Options"))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    toggleRow(tr("显示零值指标", "Show zero-value metrics"), boolBinding(\.showZeroMetrics),
+                              tr("显示值为 0 的指标。默认隐藏可能不可用的指标。", "Show metrics with value 0. Hidden by default."))
+                    toggleRow(tr("显示指标范围", "Show metrics range"), boolBinding(\.showMetricsRange),
+                              tr("报告最近 1200 帧的指标范围。", "Report metric range over the last 1200 frames."))
+                    toggleRow(tr("禁用菜单栏 HUD 菜单", "Disable menu bar HUD menu"), boolBinding(\.disableMenuBar),
+                              tr("隐藏菜单栏的 Metal HUD 菜单项。", "Hide the Metal HUD menu bar item."))
+                }
             }
         }
     }
 
     @ViewBuilder
-    private func toggleRow(_ title: String, _ binding: Binding<Bool>, _ hint: String) -> some View {
+    private func dependencyBadge(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Color.orange.opacity(0.15), in: Capsule())
+            .foregroundStyle(.orange)
+    }
+
+    @ViewBuilder
+    private func toggleRow(_ title: String, _ binding: Binding<Bool>, _ hint: String, dependency: String? = nil) -> some View {
         HStack(spacing: 4) {
             Toggle(title, isOn: binding)
                 .toggleStyle(.checkbox)
                 .lineLimit(1)
+            if let dependency {
+                dependencyBadge(dependency)
+            }
             Spacer(minLength: 0)
             InfoHint(text: hint)
         }
@@ -669,10 +719,13 @@ private struct MetalHUDTunerView: View {
                                 .rowTitleStyle()
                             Spacer()
                             Button(tr("选择", "Choose")) { model.chooseMetalHUDReportURL() }
-                            if options.reportURL != nil {
+                            if options.reportURL == nil {
+                                Button(tr("使用默认", "Use Default")) { model.useDefaultReportURL() }
+                            } else {
+                                Button(tr("打开", "Open")) { model.revealReportURLInFinder() }
                                 Button(tr("清除", "Clear")) { model.clearMetalHUDReportURL() }
                             }
-                            InfoHint(text: tr("应用可写的路径，系统会把性能报告写入此处。", "App-writable path where the system writes performance reports."))
+                            InfoHint(text: tr("应用可写的路径，系统会把性能报告写入此处。默认存放在应用支持目录下。", "App-writable path where the system writes performance reports. Defaults to Application Support."))
                         }
                         if let path = options.reportURL {
                             Text(path)
@@ -682,7 +735,7 @@ private struct MetalHUDTunerView: View {
                                 .truncationMode(.middle)
                                 .padding(.leading, 4)
                         } else {
-                            Text(tr("未选择", "None selected"))
+                            Text(tr("未选择，点击「使用默认」可快速设置", "None selected. Click \"Use Default\" for quick setup"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .padding(.leading, 4)
@@ -704,7 +757,7 @@ private struct MetalHUDTunerView: View {
             Spacer()
             Stepper(value: binding, in: range) {
                 Text("\(binding.wrappedValue)")
-                    .font(.callout.monospacedDigit())
+                    .monospacedDigit()
                     .foregroundStyle(isSet ? .primary : .secondary)
                     .frame(width: 32, alignment: .trailing)
             }
@@ -738,7 +791,7 @@ private struct MetalHUDTunerView: View {
     @ViewBuilder
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.title3.bold())
+            .font(.headline)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -747,11 +800,11 @@ private struct MetalHUDTunerView: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: "chevron.right")
-                    .font(.callout.weight(.semibold))
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
                 Text(title)
-                    .font(.title3.bold())
+                    .font(.headline)
                 Spacer()
             }
             .contentShape(Rectangle())
@@ -767,7 +820,7 @@ private struct MetalHUDTunerView: View {
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(title)
-                    .font(.headline)
+                    .font(.body.bold())
                     .foregroundStyle(isSelected ? Color.accentColor : .primary)
                 Text(description)
                     .font(.caption)
@@ -801,7 +854,6 @@ private struct MetalHUDTunerView: View {
 private extension View {
     func rowTitleStyle() -> some View {
         self
-            .font(.callout)
             .foregroundStyle(.primary)
     }
 }
