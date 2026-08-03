@@ -157,7 +157,7 @@ final class AppModel: ObservableObject {
     func resetMetalHUDOptions() {
         configuration.metalHUDOptions = MetalHUDOptions()
         saveConfiguration()
-        status = TaskStatus(phase: .succeeded, message: tr("已重置 Metal HUD 配置", "Metal HUD settings reset"), progress: 1)
+        setTransientStatus(.succeeded, message: tr("已重置 Metal HUD 配置", "Metal HUD settings reset"))
     }
 
     func exportMetalHUDOptions() {
@@ -172,7 +172,7 @@ final class AppModel: ObservableObject {
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             let data = try encoder.encode(configuration.metalHUDOptions)
             try data.write(to: url)
-            status = TaskStatus(phase: .succeeded, message: tr("已导出配置", "Configuration exported"), progress: 1)
+            setTransientStatus(.succeeded, message: tr("已导出配置", "Configuration exported"))
         } catch {
             report(error)
         }
@@ -191,7 +191,7 @@ final class AppModel: ObservableObject {
             let data = try Data(contentsOf: url)
             let options = try JSONDecoder().decode(MetalHUDOptions.self, from: data)
             updateMetalHUDOptions(options)
-            status = TaskStatus(phase: .succeeded, message: tr("已导入配置", "Configuration imported"), progress: 1)
+            setTransientStatus(.succeeded, message: tr("已导入配置", "Configuration imported"))
         } catch {
             report(error)
         }
@@ -317,15 +317,12 @@ final class AppModel: ObservableObject {
                 status.phase = .awaitingAuthorization
                 try await privileged.perform(.renice(processes.map(\.pid)))
                 try await gamingService.finishHoYoLaunch()
-                status = TaskStatus(
-                    phase: .succeeded,
-                    message: tr("已优化 \(processes.count) 个进程并恢复 hosts", "Updated \(processes.count) processes and restored hosts"),
-                    progress: 1,
-                    log: status.log
-                )
+                let logs = status.log
+                setTransientStatus(.succeeded, message: tr("已优化 \(processes.count) 个进程并恢复 hosts", "Updated \(processes.count) processes and restored hosts"))
+                status.log = logs
             } catch is CancellationError {
                 try? await gamingService.finishHoYoLaunch()
-                status = TaskStatus(phase: .cancelled, message: tr("已取消并恢复 hosts", "Cancelled and restored hosts"))
+                setTransientStatus(.cancelled, message: tr("已取消并恢复 hosts", "Cancelled and restored hosts"))
             } catch {
                 try? await gamingService.finishHoYoLaunch()
                 report(error)
@@ -455,8 +452,8 @@ final class AppModel: ObservableObject {
             let destination = try wallpaperService.importWallpaper(from: source, replacing: oldPath)
             configuration.customWallpaperPath = destination.path
             saveConfiguration()
-            status = TaskStatus(phase: .succeeded, message: tr("已导入自定义背景", "Custom wallpaper imported"), progress: 1)
             DiagnosticFileLogger.write("Custom wallpaper imported: \(destination.path)")
+            setTransientStatus(.succeeded, message: tr("已导入自定义背景", "Custom wallpaper imported"))
         } catch {
             report(error)
         }
@@ -472,7 +469,7 @@ final class AppModel: ObservableObject {
         } catch {
             DiagnosticFileLogger.write("Custom wallpaper cleared; failed to remove file: \(error.localizedDescription)")
         }
-        status = TaskStatus(phase: .succeeded, message: tr("已恢复默认背景", "Default background restored"), progress: 1)
+        setTransientStatus(.succeeded, message: tr("已恢复默认背景", "Default background restored"))
     }
 
     func prepareCacheScan() {
@@ -556,8 +553,8 @@ final class AppModel: ObservableObject {
             let diagnosticsText = await diagnosticsService.collect(taskStatus: currentStatus, helperStatus: helperStatus, configuration: currentConfiguration)
             do {
                 try diagnosticsText.write(to: destination, atomically: true, encoding: .utf8)
-                status = TaskStatus(phase: .succeeded, message: tr("诊断日志已导出：\(destination.path)", "Diagnostics exported: \(destination.path)"))
                 DiagnosticFileLogger.write("Diagnostics exported: \(destination.path)")
+                setTransientStatus(.succeeded, message: tr("诊断日志已导出：\(destination.path)", "Diagnostics exported: \(destination.path)"))
                 NSWorkspace.shared.activateFileViewerSelecting([destination])
             } catch { report(error) }
         }
@@ -667,8 +664,8 @@ final class AppModel: ObservableObject {
         }
         if succeeded.count == assignments.count {
             rememberRestorableMounts(succeeded)
-            status = TaskStatus(phase: .succeeded, message: tr("已自动恢复 \(succeeded.count) 个卷的挂载", "Restored \(succeeded.count) previous mount(s)"), progress: 1)
             DiagnosticFileLogger.write("Automatically restored \(succeeded.count) mount(s)")
+            setTransientStatus(.succeeded, message: tr("已自动恢复 \(succeeded.count) 个卷的挂载", "Restored \(succeeded.count) previous mount(s)"))
         } else {
             report(ToolboxError.commandFailed(tr("自动恢复上次挂载失败", "Failed to restore previous mounts")))
         }
@@ -721,16 +718,30 @@ final class AppModel: ObservableObject {
         Task {
             do {
                 let result = try await operation()
-                status = TaskStatus(phase: .succeeded, message: result, progress: 1)
                 DiagnosticFileLogger.write("Task succeeded: \(result)")
+                setTransientStatus(.succeeded, message: result)
             } catch is CancellationError {
-                status = TaskStatus(phase: .cancelled, message: tr("已取消", "Cancelled"))
+                setTransientStatus(.cancelled, message: tr("已取消", "Cancelled"))
             } catch { report(error) }
         }
     }
 
     private func report(_ error: Error) {
-        status = TaskStatus(phase: error is CancellationError ? .cancelled : .failed, message: error.localizedDescription)
         DiagnosticFileLogger.write("Task failed: \(error.localizedDescription)")
+        setTransientStatus(error is CancellationError ? .cancelled : .failed, message: error.localizedDescription)
+    }
+
+    private var statusClearTask: Task<Void, Never>?
+
+    /// 设置一个终态状态（succeeded/cancelled/failed），并在 5 秒后自动清除为 idle，
+    /// 让底部横幅自动消失。若期间发起新任务，旧的清除任务会被取消。
+    private func setTransientStatus(_ phase: TaskPhase, message: String, autoClearAfter: TimeInterval = 5) {
+        statusClearTask?.cancel()
+        status = TaskStatus(phase: phase, message: message, progress: phase == .succeeded ? 1 : nil)
+        statusClearTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(autoClearAfter))
+            guard !Task.isCancelled else { return }
+            await MainActor.run { self?.status = TaskStatus() }
+        }
     }
 }

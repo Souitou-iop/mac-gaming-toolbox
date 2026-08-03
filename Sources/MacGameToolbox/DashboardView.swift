@@ -19,6 +19,9 @@ struct DashboardView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             background
+                .transaction { transaction in
+                    transaction.animation = nil
+                }
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     LazyVGrid(columns: columns, spacing: 18) {
@@ -69,9 +72,6 @@ struct DashboardView: View {
                 nativeGlassEnabled = NSApp.isActive
             }
         }
-        .transaction { transaction in
-            transaction.animation = nil
-        }
         .onAppear { MenuCommandCoordinator.shared.install(model: model) }
     }
 
@@ -109,7 +109,7 @@ struct DashboardView: View {
     @ViewBuilder private var featureCards: some View {
         FeatureCard(icon: "gauge.with.dots.needle.67percent", title: tr("MetalHUD 性能监视器", "MetalHUD Performance Monitor"), subtitle: tr("开发者工具，可以查看游戏帧率等信息，也可以帮助你找到游戏异常的原因", "A developer tool for viewing game frame rates and diagnosing game issues")) {
             HStack {
-                Toggle(tr("全局启用", "Enable globally"), isOn: Binding(get: { model.metalHUDEnabled }, set: { value in model.setMetalHUD(value) })).toggleStyle(.switch)
+                Toggle(tr("全局启用", "Enable globally"), isOn: Binding(get: { model.metalHUDEnabled }, set: { value in model.setMetalHUD(value) })).toggleStyle(.switch).fixedSize(horizontal: true, vertical: false)
                 Spacer()
                 Button(tr("调节", "Tune")) { showingMetalHUDTuner = true }
                 Button(tr("对单个 App 启用", "Enable for one app")) {
