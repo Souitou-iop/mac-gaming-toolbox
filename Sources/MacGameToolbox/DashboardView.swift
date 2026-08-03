@@ -314,6 +314,7 @@ private struct MetalHUDTunerView: View {
 
     @State private var advancedPositionExpanded = false
     @State private var advancedExpanded = false
+    @State private var showingResetConfirm = false
 
     private let alignmentOptions: [(raw: String, zh: String, en: String)] = [
         ("topleft", "左上", "Top Left"),
@@ -415,6 +416,12 @@ private struct MetalHUDTunerView: View {
                 Text(tr("MetalHUD 调节器", "MetalHUD Tuner"))
                     .font(.title2.bold())
                 Spacer()
+                Button(tr("导入", "Import")) { model.importMetalHUDOptions() }
+                    .controlSize(.small)
+                Button(tr("导出", "Export")) { model.exportMetalHUDOptions() }
+                    .controlSize(.small)
+                Button(tr("重置全部", "Reset All")) { showingResetConfirm = true }
+                    .controlSize(.small)
                 Button(tr("完成", "Done")) { dismiss() }
             }
             Text(tr("以下为 macOS 支持的全部 HUD 选项。未设置的项使用系统默认。",
@@ -435,9 +442,27 @@ private struct MetalHUDTunerView: View {
                 .padding(.bottom, 4)
                 .padding(.horizontal, 28)
             }
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .foregroundStyle(.secondary)
+                Text(tr("修改将在下次使用 MetalHUD 启动应用时生效", "Changes take effect the next time you launch an app with MetalHUD"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
         }
         .padding(22)
         .frame(width: 560, height: 660)
+        .confirmationDialog(
+            tr("确定要重置全部 Metal HUD 配置吗？", "Reset all Metal HUD settings?"),
+            isPresented: $showingResetConfirm,
+            titleVisibility: .visible
+        ) {
+            Button(tr("重置", "Reset"), role: .destructive) { model.resetMetalHUDOptions() }
+            Button(tr("取消", "Cancel"), role: .cancel) {}
+        } message: {
+            Text(tr("所有外观、指标、日志与高级设置将恢复为默认值。", "All appearance, metrics, logs and advanced settings will return to defaults."))
+        }
     }
 
     @ViewBuilder

@@ -154,6 +154,49 @@ final class AppModel: ObservableObject {
         updateMetalHUDOptions(options)
     }
 
+    func resetMetalHUDOptions() {
+        configuration.metalHUDOptions = MetalHUDOptions()
+        saveConfiguration()
+        status = TaskStatus(phase: .succeeded, message: tr("已重置 Metal HUD 配置", "Metal HUD settings reset"), progress: 1)
+    }
+
+    func exportMetalHUDOptions() {
+        let panel = NSSavePanel()
+        panel.title = tr("导出 Metal HUD 配置", "Export Metal HUD Configuration")
+        panel.prompt = tr("导出", "Export")
+        panel.allowedContentTypes = [.json]
+        panel.nameFieldStringValue = "MetalHUD.json"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let data = try encoder.encode(configuration.metalHUDOptions)
+            try data.write(to: url)
+            status = TaskStatus(phase: .succeeded, message: tr("已导出配置", "Configuration exported"), progress: 1)
+        } catch {
+            report(error)
+        }
+    }
+
+    func importMetalHUDOptions() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [.json]
+        panel.title = tr("导入 Metal HUD 配置", "Import Metal HUD Configuration")
+        panel.prompt = tr("导入", "Import")
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            let data = try Data(contentsOf: url)
+            let options = try JSONDecoder().decode(MetalHUDOptions.self, from: data)
+            updateMetalHUDOptions(options)
+            status = TaskStatus(phase: .succeeded, message: tr("已导入配置", "Configuration imported"), progress: 1)
+        } catch {
+            report(error)
+        }
+    }
+
     func revealReportURLInFinder() {
         guard let path = configuration.metalHUDOptions.reportURL else { return }
         try? FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
