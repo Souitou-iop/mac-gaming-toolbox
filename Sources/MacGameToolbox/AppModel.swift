@@ -6,6 +6,10 @@ import UniformTypeIdentifiers
 import MacGameToolboxCore
 #endif
 
+enum MetalHUDPreset {
+    case minimal, balanced, complex
+}
+
 @MainActor
 final class AppModel: ObservableObject {
     @Published var status = TaskStatus()
@@ -64,7 +68,7 @@ final class AppModel: ObservableObject {
 
     func setMetalHUD(_ enabled: Bool) {
         runTask(tr("正在更新 MetalHUD", "Updating MetalHUD")) {
-            try await self.gamingService.setMetalHUD(enabled: enabled)
+            try await self.gamingService.setMetalHUD(enabled: enabled, options: self.configuration.metalHUDOptions)
             self.metalHUDEnabled = enabled
             return enabled ? tr("MetalHUD 已开启", "MetalHUD enabled") : tr("MetalHUD 已关闭", "MetalHUD disabled")
         }
@@ -88,10 +92,57 @@ final class AppModel: ObservableObject {
     func launchRecordedAppWithMetalHUD(_ path: String) {
         let applicationURL = URL(fileURLWithPath: path)
         runTask(tr("正在使用 MetalHUD 启动 App", "Launching app with MetalHUD")) {
-            try await self.gamingService.launchWithMetalHUD(applicationPath: applicationURL.path)
+            try await self.gamingService.launchWithMetalHUD(applicationPath: applicationURL.path, options: self.configuration.metalHUDOptions)
             self.rememberMetalHUDApp(applicationURL)
             return tr("已使用 MetalHUD 打开 \(applicationURL.deletingPathExtension().lastPathComponent)", "Opened \(applicationURL.deletingPathExtension().lastPathComponent) with MetalHUD")
         }
+    }
+
+    func updateMetalHUDOptions(_ options: MetalHUDOptions) {
+        configuration.metalHUDOptions = options
+        saveConfiguration()
+    }
+
+    func applyMetalHUDPreset(_ preset: MetalHUDPreset) {
+        var options = configuration.metalHUDOptions
+        switch preset {
+        case .minimal:
+            // 基础运行信息：设备、渲染层尺寸、内存、FPS、热状态
+            options.elements = ["device", "layersize", "memory", "fps", "thermal"]
+        case .balanced:
+            // 调优常用：在极简基础上加入 FPS 图表、GPU 时间、帧间隔、Rosetta 信息、游戏模式、MetalFX，便于判断卡顿来源
+            options.elements = ["device", "layersize", "memory", "fps", "fpsgraph", "gputime", "frameinterval", "rosetta", "thermal", "gamemode", "metalfx"]
+        case .complex:
+            // 性能诊断：加入呈现延迟、帧间隔直方图、命令缓冲区与编码器、磁盘、着色器、Rosetta 信息、游戏模式、MetalFX，用于定位卡顿/瓶颈
+            options.elements = ["device", "layersize", "memory", "fps", "fpsgraph", "gputime", "frameinterval", "frameintervalgraph", "frameintervalhistogram", "presentdelay", "metalcpu", "shaders", "disk", "toplabeledcommandbuffers", "toplabeledencoders", "rosetta", "thermal", "gamemode", "metalfx"]
+        }
+        updateMetalHUDOptions(options)
+    }
+
+    func currentMetalHUDPreset() -> MetalHUDPreset? {
+        let elements = Set(configuration.metalHUDOptions.elements)
+        if elements == Set(["device", "layersize", "memory", "fps", "thermal"]) { return .minimal }
+        if elements == Set(["device", "layersize", "memory", "fps", "fpsgraph", "gputime", "frameinterval", "rosetta", "thermal", "gamemode", "metalfx"]) { return .balanced }
+        if elements == Set(["device", "layersize", "memory", "fps", "fpsgraph", "gputime", "frameinterval", "frameintervalgraph", "frameintervalhistogram", "presentdelay", "metalcpu", "shaders", "disk", "toplabeledcommandbuffers", "toplabeledencoders", "rosetta", "thermal", "gamemode", "metalfx"]) { return .complex }
+        return nil
+    }
+
+    func chooseMetalHUDReportURL() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = tr("选择", "Choose")
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        var options = configuration.metalHUDOptions
+        options.reportURL = url.path
+        updateMetalHUDOptions(options)
+    }
+
+    func clearMetalHUDReportURL() {
+        var options = configuration.metalHUDOptions
+        options.reportURL = nil
+        updateMetalHUDOptions(options)
     }
 
     func removeRecentMetalHUDApp(_ app: RecentMetalHUDApp) {

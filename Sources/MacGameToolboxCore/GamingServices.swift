@@ -35,21 +35,191 @@ public actor GamingService {
         return result.outputString == "1"
     }
 
-    public func setMetalHUD(enabled: Bool) async throws {
-        let arguments = enabled ? ["setenv", "MTL_HUD_ENABLED", "1"] : ["unsetenv", "MTL_HUD_ENABLED"]
-        _ = try await runner.run("/bin/launchctl", arguments: arguments)
+    public func metalHUDOptions() async -> MetalHUDOptions {
+        func getString(_ key: String) async -> String? {
+            let value = (try? await runner.run("/bin/launchctl", arguments: ["getenv", key]).outputString)
+            return value.flatMap { $0.isEmpty ? nil : $0 }
+        }
+        func getDouble(_ key: String) async -> Double? {
+            guard let s = await getString(key) else { return nil }
+            return Double(s)
+        }
+        func getInt(_ key: String) async -> Int? {
+            guard let s = await getString(key) else { return nil }
+            return Int(s)
+        }
+        func getBool(_ key: String) async -> Bool {
+            await getString(key) == "1"
+        }
+        let opacity = await getDouble("MTL_HUD_OPACITY") ?? 1.0
+        let scale = await getDouble("MTL_HUD_SCALE") ?? 0.2
+        let alignment = await getString("MTL_HUD_ALIGNMENT") ?? "topright"
+        let positionX = await getInt("MTL_HUD_POSITION_X")
+        let positionY = await getInt("MTL_HUD_POSITION_Y")
+        let elementsRaw = await getString("MTL_HUD_ELEMENTS")
+        let elements: [String] = elementsRaw?
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty } ?? []
+        let logEnabled = await getBool("MTL_HUD_LOG_ENABLED")
+        let shaderLogEnabled = await getBool("MTL_HUD_LOG_SHADER_ENABLED")
+        let encoderTimingEnabled = await getBool("MTL_HUD_ENCODER_TIMING_ENABLED")
+        let encoderGpuTimelineFrameCount = await getInt("MTL_HUD_ENCODER_GPU_TIMELINE_FRAME_COUNT")
+        let encoderGpuTimelineSwapDelta = await getInt("MTL_HUD_ENCODER_GPU_TIMELINE_SWAP_DELTA")
+        let showZeroMetrics = await getBool("MTL_HUD_SHOW_ZERO_METRICS")
+        let showMetricsRange = await getBool("MTL_HUD_SHOW_METRICS_RANGE")
+        let metricTimeout = await getInt("MTL_HUD_METRIC_TIMEOUT")
+        let insightsEnabled = await getBool("MTL_HUD_INSIGHTS_ENABLED")
+        let insightTimeout = await getInt("MTL_HUD_INSIGHT_TIMEOUT")
+        let insightReportInterval = await getInt("MTL_HUD_INSIGHT_REPORT_INTERVAL")
+        let rusageUpdateInterval = await getInt("MTL_HUD_RUSAGE_UPDATE_INTERVAL")
+        let reportURL = await getString("MTL_HUD_REPORT_URL")
+        let disableMenuBar = await getBool("MTL_HUD_DISABLE_MENU_BAR")
+        let configFilePath = await getString("MTL_HUD_CONFIG_FILE")
+        return MetalHUDOptions(
+            opacity: opacity,
+            scale: scale,
+            alignment: alignment,
+            positionX: positionX,
+            positionY: positionY,
+            elements: elements,
+            logEnabled: logEnabled,
+            shaderLogEnabled: shaderLogEnabled,
+            encoderTimingEnabled: encoderTimingEnabled,
+            encoderGpuTimelineFrameCount: encoderGpuTimelineFrameCount,
+            encoderGpuTimelineSwapDelta: encoderGpuTimelineSwapDelta,
+            showZeroMetrics: showZeroMetrics,
+            showMetricsRange: showMetricsRange,
+            metricTimeout: metricTimeout,
+            insightsEnabled: insightsEnabled,
+            insightTimeout: insightTimeout,
+            insightReportInterval: insightReportInterval,
+            rusageUpdateInterval: rusageUpdateInterval,
+            reportURL: reportURL,
+            disableMenuBar: disableMenuBar,
+            configFilePath: configFilePath
+        )
     }
 
-    public func launchWithMetalHUD(applicationPath: String) async throws {
+    public func setMetalHUD(enabled: Bool, options: MetalHUDOptions = MetalHUDOptions()) async throws {
+        if enabled {
+            _ = try await runner.run("/bin/launchctl", arguments: ["setenv", "MTL_HUD_ENABLED", "1"])
+            for arg in Self.metalHUDEnvArgs(for: options) {
+                guard let equals = arg.firstIndex(of: "=") else { continue }
+                let key = String(arg[..<equals])
+                let value = String(arg[arg.index(after: equals)...])
+                _ = try await runner.run("/bin/launchctl", arguments: ["setenv", key, value])
+            }
+        } else {
+            for key in Self.allMetalHUDEnvKeys {
+                _ = try? await runner.run("/bin/launchctl", arguments: ["unsetenv", key])
+            }
+        }
+    }
+
+    public func launchWithMetalHUD(applicationPath: String, options: MetalHUDOptions = MetalHUDOptions()) async throws {
         let applicationURL = URL(fileURLWithPath: applicationPath).standardizedFileURL
         guard applicationURL.pathExtension.lowercased() == "app",
               FileManager.default.fileExists(atPath: applicationURL.path) else {
             throw ToolboxError.invalidPath(applicationPath)
         }
-        _ = try await runner.run(
-            "/usr/bin/env",
-            arguments: ["MTL_HUD_ENABLED=1", "/usr/bin/open", "-a", applicationURL.path]
-        )
+        var envArguments = ["MTL_HUD_ENABLED=1"]
+        envArguments.append(contentsOf: Self.metalHUDEnvArgs(for: options))
+        envArguments.append(contentsOf: ["/usr/bin/open", "-a", applicationURL.path])
+        _ = try await runner.run("/usr/bin/env", arguments: envArguments)
+    }
+
+    private static let allMetalHUDEnvKeys: [String] = [
+        "MTL_HUD_ENABLED",
+        "MTL_HUD_OPACITY",
+        "MTL_HUD_SCALE",
+        "MTL_HUD_ALIGNMENT",
+        "MTL_HUD_POSITION_X",
+        "MTL_HUD_POSITION_Y",
+        "MTL_HUD_ELEMENTS",
+        "MTL_HUD_LOG_ENABLED",
+        "MTL_HUD_LOG_SHADER_ENABLED",
+        "MTL_HUD_ENCODER_TIMING_ENABLED",
+        "MTL_HUD_ENCODER_GPU_TIMELINE_FRAME_COUNT",
+        "MTL_HUD_ENCODER_GPU_TIMELINE_SWAP_DELTA",
+        "MTL_HUD_SHOW_ZERO_METRICS",
+        "MTL_HUD_SHOW_METRICS_RANGE",
+        "MTL_HUD_METRIC_TIMEOUT",
+        "MTL_HUD_INSIGHTS_ENABLED",
+        "MTL_HUD_INSIGHT_TIMEOUT",
+        "MTL_HUD_INSIGHT_REPORT_INTERVAL",
+        "MTL_HUD_RUSAGE_UPDATE_INTERVAL",
+        "MTL_HUD_REPORT_URL",
+        "MTL_HUD_DISABLE_MENU_BAR",
+        "MTL_HUD_CONFIG_FILE"
+    ]
+
+    private static func metalHUDEnvArgs(for options: MetalHUDOptions) -> [String] {
+        var args: [String] = []
+        if options.opacity != 1.0 {
+            args.append("MTL_HUD_OPACITY=\(String(format: "%g", options.opacity))")
+        }
+        if options.scale != 0.2 {
+            args.append("MTL_HUD_SCALE=\(String(format: "%g", options.scale))")
+        }
+        if options.alignment != "topright" {
+            args.append("MTL_HUD_ALIGNMENT=\(options.alignment)")
+        }
+        if let v = options.positionX {
+            args.append("MTL_HUD_POSITION_X=\(v)")
+        }
+        if let v = options.positionY {
+            args.append("MTL_HUD_POSITION_Y=\(v)")
+        }
+        if !options.elements.isEmpty {
+            args.append("MTL_HUD_ELEMENTS=\(options.elements.joined(separator: ","))")
+        }
+        if options.logEnabled {
+            args.append("MTL_HUD_LOG_ENABLED=1")
+        }
+        if options.shaderLogEnabled {
+            args.append("MTL_HUD_LOG_SHADER_ENABLED=1")
+        }
+        if options.encoderTimingEnabled {
+            args.append("MTL_HUD_ENCODER_TIMING_ENABLED=1")
+        }
+        if let v = options.encoderGpuTimelineFrameCount {
+            args.append("MTL_HUD_ENCODER_GPU_TIMELINE_FRAME_COUNT=\(v)")
+        }
+        if let v = options.encoderGpuTimelineSwapDelta {
+            args.append("MTL_HUD_ENCODER_GPU_TIMELINE_SWAP_DELTA=\(v)")
+        }
+        if options.showZeroMetrics {
+            args.append("MTL_HUD_SHOW_ZERO_METRICS=1")
+        }
+        if options.showMetricsRange {
+            args.append("MTL_HUD_SHOW_METRICS_RANGE=1")
+        }
+        if let v = options.metricTimeout {
+            args.append("MTL_HUD_METRIC_TIMEOUT=\(v)")
+        }
+        if options.insightsEnabled {
+            args.append("MTL_HUD_INSIGHTS_ENABLED=1")
+        }
+        if let v = options.insightTimeout {
+            args.append("MTL_HUD_INSIGHT_TIMEOUT=\(v)")
+        }
+        if let v = options.insightReportInterval {
+            args.append("MTL_HUD_INSIGHT_REPORT_INTERVAL=\(v)")
+        }
+        if let v = options.rusageUpdateInterval {
+            args.append("MTL_HUD_RUSAGE_UPDATE_INTERVAL=\(v)")
+        }
+        if let s = options.reportURL, !s.isEmpty {
+            args.append("MTL_HUD_REPORT_URL=\(s)")
+        }
+        if options.disableMenuBar {
+            args.append("MTL_HUD_DISABLE_MENU_BAR=1")
+        }
+        if let s = options.configFilePath, !s.isEmpty {
+            args.append("MTL_HUD_CONFIG_FILE=\(s)")
+        }
+        return args
     }
 
     public func wineProcesses(crossOverOnly: Bool = false) async throws -> [(pid: Int32, command: String)] {

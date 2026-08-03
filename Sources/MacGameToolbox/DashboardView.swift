@@ -9,6 +9,7 @@ struct DashboardView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var nativeGlassEnabled = NSApp.isActive
     @State private var showingMetalHUDApps = false
+    @State private var showingMetalHUDTuner = false
 
     private let columns = [GridItem(.adaptive(minimum: 280), spacing: 18)]
     private var hasCustomWallpaper: Bool { model.configuration.customWallpaperPath != nil }
@@ -38,6 +39,7 @@ struct DashboardView: View {
         .sheet(isPresented: $model.showingChangelog) { ChangelogView() }
         .sheet(isPresented: $model.showingTutorials) { TutorialsView() }
         .sheet(isPresented: $model.showingProcessSelection) { ProcessSelectionView().environmentObject(model) }
+        .sheet(isPresented: $showingMetalHUDTuner) { MetalHUDTunerView().environmentObject(model) }
         .alert(cacheAlertTitle, isPresented: $model.showingCacheConfirmation) {
             Button(tr("取消", "Cancel"), role: .cancel) {}
             Button(model.cacheConfirmationStage == 1 ? tr("继续", "Continue") : tr("确认删除", "Delete"), role: model.configuration.excludesSensitiveCacheFiles ? nil : .destructive) { model.confirmCacheCleaning() }
@@ -109,6 +111,7 @@ struct DashboardView: View {
             HStack {
                 Toggle(tr("全局启用", "Enable globally"), isOn: Binding(get: { model.metalHUDEnabled }, set: { value in model.setMetalHUD(value) })).toggleStyle(.switch)
                 Spacer()
+                Button(tr("调节", "Tune")) { showingMetalHUDTuner = true }
                 Button(tr("对单个 App 启用", "Enable for one app")) {
                     if model.configuration.recentMetalHUDApps.isEmpty {
                         model.launchAppWithMetalHUD()
@@ -302,6 +305,561 @@ private struct MetalHUDAppMenu: View {
             launchingPath = nil
             model.launchRecordedAppWithMetalHUD(app.path)
         }
+    }
+}
+
+private struct MetalHUDTunerView: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var advancedPositionExpanded = false
+    @State private var advancedExpanded = false
+
+    private let alignmentOptions: [(raw: String, zh: String, en: String)] = [
+        ("topleft", "左上", "Top Left"),
+        ("topcenter", "中上", "Top Center"),
+        ("topright", "右上", "Top Right"),
+        ("centerleft", "左中", "Center Left"),
+        ("centered", "居中", "Centered"),
+        ("centerright", "右中", "Center Right"),
+        ("bottomleft", "左下", "Bottom Left"),
+        ("bottomcenter", "中下", "Bottom Center"),
+        ("bottomright", "右下", "Bottom Right")
+    ]
+
+    private var options: MetalHUDOptions { model.configuration.metalHUDOptions }
+
+    private var opacityBinding: Binding<Double> {
+        Binding(
+            get: { options.opacity },
+            set: { value in
+                var o = options
+                o.opacity = value
+                model.updateMetalHUDOptions(o)
+            }
+        )
+    }
+
+    private var scaleBinding: Binding<Double> {
+        Binding(
+            get: { options.scale },
+            set: { value in
+                var o = options
+                o.scale = value
+                model.updateMetalHUDOptions(o)
+            }
+        )
+    }
+
+    private var alignmentBinding: Binding<String> {
+        Binding(
+            get: { options.alignment },
+            set: { value in
+                var o = options
+                o.alignment = value
+                model.updateMetalHUDOptions(o)
+            }
+        )
+    }
+
+    private func intOptionalBinding(_ keyPath: WritableKeyPath<MetalHUDOptions, Int?>, default defaultValue: Int) -> Binding<Int> {
+        Binding(
+            get: { options[keyPath: keyPath] ?? defaultValue },
+            set: { value in
+                var o = options
+                o[keyPath: keyPath] = value
+                model.updateMetalHUDOptions(o)
+            }
+        )
+    }
+
+    private func clearIntOptional(_ keyPath: WritableKeyPath<MetalHUDOptions, Int?>) {
+        var o = options
+        o[keyPath: keyPath] = nil
+        model.updateMetalHUDOptions(o)
+    }
+
+    private func boolBinding(_ keyPath: WritableKeyPath<MetalHUDOptions, Bool>) -> Binding<Bool> {
+        Binding(
+            get: { options[keyPath: keyPath] },
+            set: { value in
+                var o = options
+                o[keyPath: keyPath] = value
+                model.updateMetalHUDOptions(o)
+            }
+        )
+    }
+
+    private func elementBinding(_ el: MetalHUDElement) -> Binding<Bool> {
+        Binding(
+            get: { options.elements.contains(el.raw) },
+            set: { on in
+                var o = options
+                if on {
+                    if !o.elements.contains(el.raw) { o.elements.append(el.raw) }
+                } else {
+                    o.elements.removeAll { $0 == el.raw }
+                }
+                model.updateMetalHUDOptions(o)
+            }
+        )
+    }
+
+    private var opacityPercentage: Int { Int((options.opacity * 100).rounded()) }
+    private var scalePercentage: Int { Int((options.scale * 100).rounded()) }
+    private var selectedElementCount: Int { options.elements.count }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text(tr("MetalHUD 调节器", "MetalHUD Tuner"))
+                    .font(.title2.bold())
+                Spacer()
+                Button(tr("完成", "Done")) { dismiss() }
+            }
+            Text(tr("以下为 macOS 支持的全部 HUD 选项。未设置的项使用系统默认。",
+                     "All HUD options supported by macOS. Unset items use system defaults."))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    appearanceSection
+                    elementsSection
+                    Divider()
+                    presetsSection
+                    Divider()
+                    logsSection
+                    advancedSection
+                }
+                .padding(.bottom, 4)
+                .padding(.trailing, 28)
+            }
+        }
+        .padding(22)
+        .frame(width: 560, height: 660)
+    }
+
+    @ViewBuilder
+    private var appearanceSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(tr("外观", "Appearance"))
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    Text(tr("透明度", "Opacity"))
+                        .rowTitleStyle()
+                    Spacer()
+                    Slider(value: opacityBinding, in: 0...1, step: 0.05)
+                        .frame(maxWidth: 180)
+                    Text("\(opacityPercentage)%")
+                        .font(.callout.monospacedDigit())
+                        .frame(width: 44, alignment: .trailing)
+                        .foregroundStyle(.secondary)
+                    InfoHint(text: tr("调整 HUD 覆盖层的透明度。1.0 为完全不透明，0.0 为完全透明。", "Adjust the HUD overlay opacity. 1.0 is fully opaque, 0.0 is fully transparent."))
+                }
+                HStack(spacing: 8) {
+                    Text(tr("缩放", "Scale"))
+                        .rowTitleStyle()
+                    Spacer()
+                    Slider(value: scaleBinding, in: 0...1, step: 0.05)
+                        .frame(maxWidth: 180)
+                    Text("\(scalePercentage)%")
+                        .font(.callout.monospacedDigit())
+                        .frame(width: 44, alignment: .trailing)
+                        .foregroundStyle(.secondary)
+                    InfoHint(text: tr("HUD 大小，按可绘制宽度百分比。默认 0.2，最小宽度 300 像素。", "HUD size as percentage of drawable width. Default 0.2, min 300px."))
+                }
+                HStack(spacing: 8) {
+                    Text(tr("对齐", "Alignment"))
+                        .rowTitleStyle()
+                    Spacer()
+                    Picker("", selection: alignmentBinding) {
+                        ForEach(alignmentOptions, id: \.raw) { option in
+                            Text(tr(option.zh, option.en)).tag(option.raw)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .frame(width: 150)
+                    InfoHint(text: tr("HUD 在窗口中的位置。", "Position of the HUD in the window."))
+                }
+            }
+            .padding(.top, 2)
+            VStack(alignment: .leading, spacing: 8) {
+                collapsibleHeader(
+                    title: tr("高级", "Advanced"),
+                    isExpanded: advancedPositionExpanded
+                ) {
+                    withAnimation(.easeInOut(duration: 0.2)) { advancedPositionExpanded.toggle() }
+                }
+                if advancedPositionExpanded {
+                    VStack(spacing: 8) {
+                        intOptionalPositionRow(
+                            title: tr("位置 X", "Position X"),
+                            binding: intOptionalBinding(\.positionX, default: 0),
+                            isSet: options.positionX != nil,
+                            onClear: { clearIntOptional(\.positionX) }
+                        )
+                        intOptionalPositionRow(
+                            title: tr("位置 Y", "Position Y"),
+                            binding: intOptionalBinding(\.positionY, default: 0),
+                            isSet: options.positionY != nil,
+                            onClear: { clearIntOptional(\.positionY) }
+                        )
+                    }
+                    .padding(.leading, 16)
+                    .padding(.top, 2)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func intOptionalPositionRow(title: String, binding: Binding<Int>, isSet: Bool, onClear: @escaping () -> Void) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .rowTitleStyle()
+            Spacer()
+            TextField("", value: binding, format: .number)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 90)
+                .multilineTextAlignment(.trailing)
+            if isSet {
+                Button(tr("清除", "Clear")) { onClear() }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var elementsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(tr("指标列表", "Metrics"))
+            HStack(spacing: 10) {
+                Button(tr("全选", "Select All")) {
+                    var o = options
+                    o.elements = MetalHUDElement.allElements.map(\.raw)
+                    model.updateMetalHUDOptions(o)
+                }
+                Button(tr("清空", "Clear")) {
+                    var o = options
+                    o.elements = []
+                    model.updateMetalHUDOptions(o)
+                }
+                Spacer()
+                Text(tr("已选 \(selectedElementCount) 项", "\(selectedElementCount) selected"))
+                    .font(.callout)
+                    .foregroundStyle(selectedElementCount > 0 ? .primary : .secondary)
+                    .monospacedDigit()
+                    .frame(width: 90, alignment: .trailing)
+                    .lineLimit(1)
+            }
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], alignment: .leading, spacing: 8) {
+                ForEach(MetalHUDElement.allElements, id: \.raw) { el in
+                    HStack(spacing: 4) {
+                        Toggle(tr(el.zh, el.en), isOn: elementBinding(el))
+                            .toggleStyle(.checkbox)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                        InfoHint(text: tr(el.hintZh, el.hintEn))
+                    }
+                }
+            }
+            .padding(.top, 2)
+        }
+    }
+
+    @ViewBuilder
+    private var logsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(tr("日志与性能", "Logs & Performance"))
+            VStack(spacing: 8) {
+                toggleRow(tr("帧统计日志", "Frame statistics log"), boolBinding(\.logEnabled),
+                          tr("将每帧的性能统计输出到控制台日志，便于事后分析。需要先启用 HUD。", "Log per-frame performance statistics to the console for later analysis. Requires HUD to be enabled."))
+                toggleRow(tr("着色器编译日志", "Shader compile log"), boolBinding(\.shaderLogEnabled),
+                          tr("记录着色器编译活动，帮助定位编译耗时问题。需要先启用 HUD。", "Log shader compilation activity to help diagnose compile-time costs. Requires HUD to be enabled."))
+                toggleRow(tr("编码器 GPU 时间追踪", "Encoder GPU time tracking"), boolBinding(\.encoderTimingEnabled),
+                          tr("开启编码器级 GPU 时间追踪，是 GPU 时间线、顶部标记等指标的前提。", "Enable encoder-level GPU time tracking. Required for GPU timeline and top-labeled metrics."))
+                toggleRow(tr("性能洞察", "Performance insights"), boolBinding(\.insightsEnabled),
+                          tr("跟踪 Metal API 使用并高亮潜在性能瓶颈。", "Track Metal API usage and highlight potential bottlenecks."))
+                toggleRow(tr("显示零值指标", "Show zero-value metrics"), boolBinding(\.showZeroMetrics),
+                          tr("显示值为 0 的指标。默认隐藏可能不可用的指标。", "Show metrics with value 0. Hidden by default."))
+                toggleRow(tr("显示指标范围", "Show metrics range"), boolBinding(\.showMetricsRange),
+                          tr("报告最近 1200 帧的指标范围。", "Report metric range over the last 1200 frames."))
+                toggleRow(tr("禁用菜单栏 HUD 菜单", "Disable menu bar HUD menu"), boolBinding(\.disableMenuBar),
+                          tr("隐藏菜单栏的 Metal HUD 菜单项。", "Hide the Metal HUD menu bar item."))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func toggleRow(_ title: String, _ binding: Binding<Bool>, _ hint: String) -> some View {
+        HStack(spacing: 4) {
+            Toggle(title, isOn: binding)
+                .toggleStyle(.checkbox)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+            InfoHint(text: hint)
+        }
+    }
+
+    @ViewBuilder
+    private var advancedSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            collapsibleHeader(
+                title: tr("高级", "Advanced"),
+                isExpanded: advancedExpanded
+            ) {
+                withAnimation(.easeInOut(duration: 0.2)) { advancedExpanded.toggle() }
+            }
+            if advancedExpanded {
+                VStack(alignment: .leading, spacing: 8) {
+                    intStepperRow(
+                        title: tr("GPU 时间线帧数", "GPU timeline frame count"),
+                        binding: intOptionalBinding(\.encoderGpuTimelineFrameCount, default: 6),
+                        range: 1...30,
+                        isSet: options.encoderGpuTimelineFrameCount != nil,
+                        onClear: { clearIntOptional(\.encoderGpuTimelineFrameCount) },
+                        hint: tr("GPU 时间线显示的最大帧数。默认 6。", "Max frames in GPU timeline. Default 6.")
+                    )
+                    intStepperRow(
+                        title: tr("GPU 时间线更新间隔", "GPU timeline update interval"),
+                        binding: intOptionalBinding(\.encoderGpuTimelineSwapDelta, default: 1),
+                        range: 1...10,
+                        isSet: options.encoderGpuTimelineSwapDelta != nil,
+                        onClear: { clearIntOptional(\.encoderGpuTimelineSwapDelta) },
+                        hint: tr("GPU 时间线更新间隔（秒）。默认 1。", "GPU timeline update interval in seconds. Default 1.")
+                    )
+                    intStepperRow(
+                        title: tr("指标超时", "Metric timeout"),
+                        binding: intOptionalBinding(\.metricTimeout, default: 5),
+                        range: 1...60,
+                        isSet: options.metricTimeout != nil,
+                        onClear: { clearIntOptional(\.metricTimeout) },
+                        hint: tr("瞬态指标（如 MetalFX）自动隐藏的超时（秒）。默认 5。", "Timeout for transient metrics like MetalFX. Default 5s.")
+                    )
+                    intStepperRow(
+                        title: tr("洞察超时", "Insight timeout"),
+                        binding: intOptionalBinding(\.insightTimeout, default: 10),
+                        range: 1...60,
+                        isSet: options.insightTimeout != nil,
+                        onClear: { clearIntOptional(\.insightTimeout) },
+                        hint: tr("性能洞察消失前的超时（秒）。默认 10。", "Timeout before an insight disappears. Default 10s.")
+                    )
+                    intStepperRow(
+                        title: tr("洞察报告间隔", "Insight report interval"),
+                        binding: intOptionalBinding(\.insightReportInterval, default: 5),
+                        range: 1...60,
+                        isSet: options.insightReportInterval != nil,
+                        onClear: { clearIntOptional(\.insightReportInterval) },
+                        hint: tr("性能洞察报告间隔（秒）。默认 5。", "Insight report interval in seconds. Default 5.")
+                    )
+                    intStepperRow(
+                        title: tr("资源使用更新间隔", "Resource usage update interval"),
+                        binding: intOptionalBinding(\.rusageUpdateInterval, default: 3),
+                        range: 1...30,
+                        isSet: options.rusageUpdateInterval != nil,
+                        onClear: { clearIntOptional(\.rusageUpdateInterval) },
+                        hint: tr("系统资源使用更新间隔（秒）。默认 3。", "System resource usage update interval. Default 3s.")
+                    )
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            Text(tr("性能报告路径", "Report URL"))
+                                .rowTitleStyle()
+                            Spacer()
+                            Button(tr("选择", "Choose")) { model.chooseMetalHUDReportURL() }
+                            if options.reportURL != nil {
+                                Button(tr("清除", "Clear")) { model.clearMetalHUDReportURL() }
+                            }
+                            InfoHint(text: tr("应用可写的路径，系统会把性能报告写入此处。", "App-writable path where the system writes performance reports."))
+                        }
+                        if let path = options.reportURL {
+                            Text(path)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .padding(.leading, 4)
+                        } else {
+                            Text(tr("未选择", "None selected"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .padding(.leading, 4)
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+                .padding(.leading, 16)
+                .padding(.top, 2)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func intStepperRow(title: String, binding: Binding<Int>, range: ClosedRange<Int>, isSet: Bool, onClear: @escaping () -> Void, hint: String) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .rowTitleStyle()
+            Spacer()
+            Stepper(value: binding, in: range) {
+                Text("\(binding.wrappedValue)")
+                    .font(.callout.monospacedDigit())
+                    .foregroundStyle(isSet ? .primary : .secondary)
+                    .frame(width: 32, alignment: .trailing)
+            }
+            if isSet {
+                Button(tr("清除", "Clear")) { onClear() }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+            }
+            InfoHint(text: hint)
+        }
+    }
+
+    @ViewBuilder
+    private var presetsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader(tr("快速预设", "Presets"))
+            VStack(spacing: 8) {
+                presetButton(.minimal,
+                             title: tr("极简", "Minimal"),
+                             description: tr("仅看运行状态：设备型号、窗口尺寸、内存占用、帧率与发热，适合日常游戏", "Just runtime status: device, layer size, memory, FPS and thermal — for everyday gaming"))
+                presetButton(.balanced,
+                             title: tr("均衡", "Balanced"),
+                             description: tr("加入 FPS 曲线、GPU 耗时、帧间隔、游戏模式与 MetalFX 状态，适合调画质找卡顿", "Adds FPS graph, GPU time, frame interval, game mode & MetalFX — for tuning settings and spotting hitches"))
+                presetButton(.complex,
+                             title: tr("复杂", "Complex"),
+                             description: tr("进一步呈现延迟、帧间隔直方图、CPU 时间、着色器、磁盘 IO 与编码器调用，适合深挖性能瓶颈", "Further exposes present delay, frame interval histogram, CPU time, shaders, disk IO & encoder calls — for digging into bottlenecks"))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.title3.bold())
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func collapsibleHeader(title: String, isExpanded: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: "chevron.right")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                Text(title)
+                    .font(.title3.bold())
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func presetButton(_ preset: MetalHUDPreset, title: String, description: String) -> some View {
+        let isSelected = model.currentMetalHUDPreset() == preset
+        Button {
+            model.applyMetalHUDPreset(preset)
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(isSelected ? Color.accentColor : .primary)
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 4)
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.tint)
+                        .transition(.opacity.combined(with: .scale))
+                }
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Color.accentColor.opacity(0.14) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(isSelected ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1.5)
+            )
+            .animation(.easeInOut(duration: 0.25), value: isSelected)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private extension View {
+    func rowTitleStyle() -> some View {
+        self
+            .font(.callout)
+            .foregroundStyle(.primary)
+    }
+}
+
+private struct InfoHint: View {
+    let text: String
+    @State private var isHovering = false
+    @State private var showPopover = false
+    @State private var hoverTask: Task<Void, Never>?
+
+    private var popoverWidth: CGFloat {
+        switch text.count {
+        case 0...20: return 180
+        case 21...40: return 240
+        case 41...70: return 300
+        default: return 360
+        }
+    }
+
+    private var popoverFont: Font {
+        switch text.count {
+        case 0...30: return .callout
+        default: return .caption
+        }
+    }
+
+    var body: some View {
+        Image(systemName: "info.circle")
+            .foregroundStyle(.secondary)
+            .font(.caption)
+            .padding(6)
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                isHovering = hovering
+                hoverTask?.cancel()
+                if hovering {
+                    hoverTask = Task {
+                        try? await Task.sleep(nanoseconds: 250_000_000)
+                        guard !Task.isCancelled, isHovering else { return }
+                        showPopover = true
+                    }
+                } else {
+                    hoverTask = Task {
+                        try? await Task.sleep(nanoseconds: 300_000_000)
+                        guard !Task.isCancelled, !isHovering else { return }
+                        showPopover = false
+                    }
+                }
+            }
+            .onTapGesture { showPopover.toggle() }
+            .accessibilityLabel(text)
+            .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+                Text(text)
+                    .font(popoverFont)
+                    .padding(10)
+                    .frame(width: popoverWidth, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
     }
 }
 

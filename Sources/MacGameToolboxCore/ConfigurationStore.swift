@@ -40,6 +40,7 @@ public actor ConfigurationStore {
         normalized.restorableDiskMounts = uniquePresets(configuration.restorableDiskMounts)
         normalized.recentMetalHUDApps = Array(uniqueRecentApps(configuration.recentMetalHUDApps).prefix(Self.maxRecentMetalHUDApps))
         if ![10, 15, 20].contains(normalized.hoYoWaitSeconds) { normalized.hoYoWaitSeconds = 15 }
+        normalized.metalHUDOptions = Self.normalizedMetalHUDOptions(normalized.metalHUDOptions)
         try fileManager.createDirectory(at: configurationURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -75,6 +76,34 @@ public actor ConfigurationStore {
     private func unique(_ values: [String]) -> [String] {
         var seen = Set<String>()
         return values.filter { seen.insert($0).inserted }
+    }
+
+    private static let validAlignments: Set<String> = [
+        "topleft", "topcenter", "topright",
+        "centerleft", "centered", "centerright",
+        "bottomleft", "bottomcenter", "bottomright"
+    ]
+
+    private static func normalizedMetalHUDOptions(_ x: MetalHUDOptions) -> MetalHUDOptions {
+        var result = x
+        result.opacity = min(1.0, max(0.0, x.opacity))
+        result.scale = min(1.0, max(0.0, x.scale))
+        if let px = result.positionX, px < 0 { result.positionX = nil }
+        if let py = result.positionY, py < 0 { result.positionY = nil }
+        if let v = result.encoderGpuTimelineFrameCount, v < 0 { result.encoderGpuTimelineFrameCount = nil }
+        if let v = result.encoderGpuTimelineSwapDelta, v < 0 { result.encoderGpuTimelineSwapDelta = nil }
+        if let v = result.metricTimeout, v < 0 { result.metricTimeout = nil }
+        if let v = result.insightTimeout, v < 0 { result.insightTimeout = nil }
+        if let v = result.insightReportInterval, v < 0 { result.insightReportInterval = nil }
+        if let v = result.rusageUpdateInterval, v < 0 { result.rusageUpdateInterval = nil }
+        if let s = result.reportURL, s.isEmpty { result.reportURL = nil }
+        if let s = result.configFilePath, s.isEmpty { result.configFilePath = nil }
+        if !validAlignments.contains(result.alignment) { result.alignment = "topright" }
+        var seenElements = Set<String>()
+        result.elements = result.elements
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && seenElements.insert($0).inserted }
+        return result
     }
 
     private func uniquePresets(_ values: [DiskPreset]) -> [DiskPreset] {

@@ -254,6 +254,125 @@ actor RecordingCommandRunner: CommandRunning {
     #expect(calls.first?.1 == ["MTL_HUD_ENABLED=1", "/usr/bin/open", "-a", application.path])
 }
 
+@Test func metalHUDOptionsRoundTripAndClampsOpacity() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let store = ConfigurationStore(configurationURL: root.appendingPathComponent("configuration.json"))
+    var configuration = AppConfiguration()
+    configuration.metalHUDOptions = MetalHUDOptions(
+        opacity: 1.5,
+        scale: 1.4,
+        alignment: "bogus",
+        positionX: -10,
+        positionY: 20,
+        elements: ["fps", "gputime", "fps", ""],
+        logEnabled: true,
+        shaderLogEnabled: true,
+        encoderGpuTimelineFrameCount: -2,
+        metricTimeout: -5,
+        reportURL: "",
+        configFilePath: ""
+    )
+    try await store.save(configuration)
+    let loaded = try await store.load(importLegacy: false)
+    #expect(loaded.metalHUDOptions.opacity == 1.0)
+    #expect(loaded.metalHUDOptions.scale == 1.0)
+    #expect(loaded.metalHUDOptions.alignment == "topright")
+    #expect(loaded.metalHUDOptions.positionX == nil)
+    #expect(loaded.metalHUDOptions.positionY == 20)
+    #expect(loaded.metalHUDOptions.elements == ["fps", "gputime"])
+    #expect(loaded.metalHUDOptions.logEnabled)
+    #expect(loaded.metalHUDOptions.shaderLogEnabled)
+    #expect(loaded.metalHUDOptions.encoderGpuTimelineFrameCount == nil)
+    #expect(loaded.metalHUDOptions.metricTimeout == nil)
+    #expect(loaded.metalHUDOptions.configFilePath == nil)
+    #expect(loaded.metalHUDOptions.reportURL == nil)
+}
+
+@Test func metalHUDOptionsDefaultsWhenMissing() throws {
+    let data = Data(#"{"schemaVersion":3}"#.utf8)
+    let configuration = try JSONDecoder().decode(AppConfiguration.self, from: data)
+    #expect(configuration.metalHUDOptions == MetalHUDOptions())
+    #expect(configuration.metalHUDOptions.opacity == 1.0)
+    #expect(configuration.metalHUDOptions.scale == 0.2)
+    #expect(configuration.metalHUDOptions.alignment == "topright")
+    #expect(configuration.metalHUDOptions.positionX == nil)
+    #expect(configuration.metalHUDOptions.positionY == nil)
+    #expect(configuration.metalHUDOptions.elements.isEmpty)
+    #expect(!configuration.metalHUDOptions.logEnabled)
+    #expect(!configuration.metalHUDOptions.shaderLogEnabled)
+    #expect(!configuration.metalHUDOptions.encoderTimingEnabled)
+    #expect(configuration.metalHUDOptions.encoderGpuTimelineFrameCount == nil)
+    #expect(configuration.metalHUDOptions.encoderGpuTimelineSwapDelta == nil)
+    #expect(!configuration.metalHUDOptions.showZeroMetrics)
+    #expect(!configuration.metalHUDOptions.showMetricsRange)
+    #expect(configuration.metalHUDOptions.metricTimeout == nil)
+    #expect(!configuration.metalHUDOptions.insightsEnabled)
+    #expect(configuration.metalHUDOptions.insightTimeout == nil)
+    #expect(configuration.metalHUDOptions.insightReportInterval == nil)
+    #expect(configuration.metalHUDOptions.rusageUpdateInterval == nil)
+    #expect(configuration.metalHUDOptions.reportURL == nil)
+    #expect(!configuration.metalHUDOptions.disableMenuBar)
+    #expect(configuration.metalHUDOptions.configFilePath == nil)
+}
+
+@Test func perAppMetalHUDLaunchInjectsOptions() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let application = root.appendingPathComponent("Example Game.app", isDirectory: true)
+    try FileManager.default.createDirectory(at: application, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let runner = RecordingCommandRunner()
+    let service = GamingService(runner: runner, privileged: RecordingPrivilegedOperator())
+    try await service.launchWithMetalHUD(
+        applicationPath: application.path,
+        options: MetalHUDOptions(
+            opacity: 0.6,
+            scale: 0.3,
+            alignment: "bottomleft",
+            elements: ["fps", "gputime"],
+            logEnabled: true,
+            shaderLogEnabled: false,
+            encoderTimingEnabled: true,
+            encoderGpuTimelineFrameCount: 8,
+            insightsEnabled: true,
+            disableMenuBar: true
+        )
+    )
+
+    let calls = await runner.calls
+    #expect(calls.count == 1)
+    let arguments = try #require(calls.first?.1)
+    #expect(arguments.contains("MTL_HUD_ENABLED=1"))
+    #expect(arguments.contains("MTL_HUD_OPACITY=0.6"))
+    #expect(arguments.contains("MTL_HUD_SCALE=0.3"))
+    #expect(arguments.contains("MTL_HUD_ALIGNMENT=bottomleft"))
+    #expect(arguments.contains("MTL_HUD_ELEMENTS=fps,gputime"))
+    #expect(arguments.contains("MTL_HUD_LOG_ENABLED=1"))
+    #expect(arguments.contains("MTL_HUD_ENCODER_TIMING_ENABLED=1"))
+    #expect(arguments.contains("MTL_HUD_INSIGHTS_ENABLED=1"))
+    #expect(arguments.contains("MTL_HUD_DISABLE_MENU_BAR=1"))
+    #expect(arguments.contains("MTL_HUD_ENCODER_GPU_TIMELINE_FRAME_COUNT=8"))
+    #expect(!arguments.contains(where: { $0.hasPrefix("MTL_HUD_LOG_SHADER_ENABLED=") }))
+    #expect(!arguments.contains(where: { $0.hasPrefix("MTL_HUD_POSITION_X=") }))
+    #expect(!arguments.contains(where: { $0.hasPrefix("MTL_HUD_METRIC_TIMEOUT=") }))
+}
+
+@Test func perAppMetalHUDLaunchDefaultsInjectsOnlyEnabled() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let application = root.appendingPathComponent("Example Game.app", isDirectory: true)
+    try FileManager.default.createDirectory(at: application, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let runner = RecordingCommandRunner()
+    let service = GamingService(runner: runner, privileged: RecordingPrivilegedOperator())
+    try await service.launchWithMetalHUD(applicationPath: application.path, options: MetalHUDOptions())
+
+    let calls = await runner.calls
+    #expect(calls.count == 1)
+    #expect(calls.first?.0 == "/usr/bin/env")
+    #expect(calls.first?.1 == ["MTL_HUD_ENABLED=1", "/usr/bin/open", "-a", application.path])
+}
+
 actor HostnameRunner: CommandRunning {
     func run(_ executable: String, arguments: [String]) async throws -> CommandResult {
         switch arguments.last {
