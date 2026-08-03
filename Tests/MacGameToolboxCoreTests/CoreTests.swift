@@ -250,8 +250,8 @@ actor RecordingCommandRunner: CommandRunning {
 
     let calls = await runner.calls
     #expect(calls.count == 1)
-    #expect(calls.first?.0 == "/usr/bin/env")
-    #expect(calls.first?.1 == ["MTL_HUD_ENABLED=1", "/usr/bin/open", "-a", application.path])
+    #expect(calls.first?.0 == "/usr/bin/open")
+    #expect(calls.first?.1 == ["-a", application.path, "--env", "MTL_HUD_ENABLED=1"])
 }
 
 @Test func metalHUDOptionsRoundTripAndClampsOpacity() async throws {
@@ -369,8 +369,8 @@ actor RecordingCommandRunner: CommandRunning {
 
     let calls = await runner.calls
     #expect(calls.count == 1)
-    #expect(calls.first?.0 == "/usr/bin/env")
-    #expect(calls.first?.1 == ["MTL_HUD_ENABLED=1", "/usr/bin/open", "-a", application.path])
+    #expect(calls.first?.0 == "/usr/bin/open")
+    #expect(calls.first?.1 == ["-a", application.path, "--env", "MTL_HUD_ENABLED=1"])
 }
 
 actor HostnameRunner: CommandRunning {

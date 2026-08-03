@@ -123,10 +123,13 @@ public actor GamingService {
               FileManager.default.fileExists(atPath: applicationURL.path) else {
             throw ToolboxError.invalidPath(applicationPath)
         }
-        var envArguments = ["MTL_HUD_ENABLED=1"]
-        envArguments.append(contentsOf: Self.metalHUDEnvArgs(for: options))
-        envArguments.append(contentsOf: ["/usr/bin/open", "-a", applicationURL.path])
-        _ = try await runner.run("/usr/bin/env", arguments: envArguments)
+        // 使用 `open --env` 将环境变量注入到目标进程；`/usr/bin/env VAR=val open -a` 方式
+        // 不会传递变量给 launchd 重新派生的 app 进程，导致 HUD 无法生效。
+        var arguments = ["-a", applicationURL.path]
+        for arg in Self.metalHUDEnvArgs(for: options, includeEnabled: true) {
+            arguments.append(contentsOf: ["--env", arg])
+        }
+        _ = try await runner.run("/usr/bin/open", arguments: arguments)
     }
 
     private static let allMetalHUDEnvKeys: [String] = [
@@ -154,8 +157,11 @@ public actor GamingService {
         "MTL_HUD_CONFIG_FILE"
     ]
 
-    private static func metalHUDEnvArgs(for options: MetalHUDOptions) -> [String] {
+    private static func metalHUDEnvArgs(for options: MetalHUDOptions, includeEnabled: Bool = false) -> [String] {
         var args: [String] = []
+        if includeEnabled {
+            args.append("MTL_HUD_ENABLED=1")
+        }
         if options.opacity != 1.0 {
             args.append("MTL_HUD_OPACITY=\(String(format: "%g", options.opacity))")
         }
