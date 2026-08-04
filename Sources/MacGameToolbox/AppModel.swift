@@ -1,7 +1,6 @@
 import AppKit
 import Combine
 import Foundation
-import SwiftUI
 import UniformTypeIdentifiers
 #if SWIFT_PACKAGE
 import MacGameToolboxCore
@@ -293,7 +292,7 @@ final class AppModel: ObservableObject {
         guard hoyoTask == nil else { return }
         let waitSeconds = configuration.hoYoWaitSeconds
         isHoYoAssistantRunning = true
-        setAnimatedStatus(TaskStatus(phase: .awaitingAuthorization, message: tr("正在启用系统辅助服务", "Enabling system helper"), progress: 0, log: []))
+        status = TaskStatus(phase: .awaitingAuthorization, message: tr("正在启用系统辅助服务", "Enabling system helper"), progress: 0, log: [])
         hoyoTask = Task {
             do {
                 try await gamingService.beginHoYoLaunch()
@@ -406,7 +405,7 @@ final class AppModel: ObservableObject {
     }
 
     func restorePreviousMounts() {
-        setAnimatedStatus(TaskStatus(phase: .running, message: tr("正在恢复上次挂载", "Restoring previous mounts")))
+        status = TaskStatus(phase: .running, message: tr("正在恢复上次挂载", "Restoring previous mounts"))
         Task {
             do {
                 let availableVolumes = try await diskService.listEligibleVolumes()
@@ -474,12 +473,12 @@ final class AppModel: ObservableObject {
     }
 
     func prepareCacheScan() {
-        setAnimatedStatus(TaskStatus(phase: .running, message: tr("正在扫描缓存", "Scanning caches")))
+        status = TaskStatus(phase: .running, message: tr("正在扫描缓存", "Scanning caches"))
         Task {
             cacheScan = await cacheService.scan(excludingSensitiveFiles: configuration.excludesSensitiveCacheFiles)
             cacheConfirmationStage = 1
             showingCacheConfirmation = true
-            setAnimatedStatus(TaskStatus())
+            status = TaskStatus()
         }
     }
 
@@ -542,7 +541,7 @@ final class AppModel: ObservableObject {
         let currentStatus = status
         let currentConfiguration = configuration
         let helperStatus = privileged.diagnosticStatus()
-        setAnimatedStatus(TaskStatus(phase: .running, message: tr("正在收集诊断日志", "Collecting diagnostics")))
+        status = TaskStatus(phase: .running, message: tr("正在收集诊断日志", "Collecting diagnostics"))
         DiagnosticFileLogger.write("Diagnostics export started: \(destination.path)")
         do {
             try (tr("诊断日志正在收集，请稍候…", "Diagnostics collection in progress…") + "\n").write(to: destination, atomically: true, encoding: .utf8)
@@ -657,7 +656,7 @@ final class AppModel: ObservableObject {
             return
         }
 
-        setAnimatedStatus(TaskStatus(phase: .running, message: tr("正在自动恢复上次挂载", "Restoring previous mounts")))
+        status = TaskStatus(phase: .running, message: tr("正在自动恢复上次挂载", "Restoring previous mounts"))
         let results = await diskService.mountBatch(assignments)
         let succeeded = assignments.filter {
             guard case .success? = results[$0.0] else { return false }
@@ -713,14 +712,8 @@ final class AppModel: ObservableObject {
         saveConfiguration()
     }
 
-    private func setAnimatedStatus(_ newStatus: TaskStatus) {
-        withAnimation(.easeInOut(duration: 0.3)) {
-            status = newStatus
-        }
-    }
-
     private func runTask(_ message: String, operation: @escaping @MainActor () async throws -> String) {
-        setAnimatedStatus(TaskStatus(phase: .running, message: message))
+        status = TaskStatus(phase: .running, message: message)
         DiagnosticFileLogger.write("Task started: \(message)")
         Task {
             do {
@@ -744,14 +737,11 @@ final class AppModel: ObservableObject {
     /// 让底部横幅自动消失。若期间发起新任务，旧的清除任务会被取消。
     private func setTransientStatus(_ phase: TaskPhase, message: String, autoClearAfter: TimeInterval = 5) {
         statusClearTask?.cancel()
-        setAnimatedStatus(TaskStatus(phase: phase, message: message, progress: phase == .succeeded ? 1 : nil))
+        status = TaskStatus(phase: phase, message: message, progress: phase == .succeeded ? 1 : nil)
         statusClearTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(autoClearAfter))
             guard !Task.isCancelled else { return }
-            await MainActor.run {
-                guard let self else { return }
-                self.setAnimatedStatus(TaskStatus())
-            }
+            await MainActor.run { self?.status = TaskStatus() }
         }
     }
 }
