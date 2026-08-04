@@ -36,6 +36,7 @@ struct DashboardView: View {
             statusPanel
                 .padding(.horizontal, 28)
                 .padding(.bottom, 22)
+                .animation(.easeInOut(duration: 0.45), value: model.status.phase != .idle)
         }
         .background(WindowAppearanceConfigurator(nativeGlassEnabled: $nativeGlassEnabled, colorScheme: effectiveColorScheme, isEnabled: useLiquidGlassUI))
         .sheet(isPresented: $model.showingDiskManager) { DiskManagerView().environmentObject(model) }
@@ -103,6 +104,7 @@ struct DashboardView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .liquidGlassPanel(cornerRadius: 12, colorScheme: effectiveColorScheme, usesLiquidGlassUI: useLiquidGlassUI, nativeGlassEnabled: nativeGlassEnabled)
+            .transition(.opacity)
         }
     }
 
