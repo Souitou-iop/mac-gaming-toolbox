@@ -10,6 +10,8 @@ struct DashboardView: View {
     @State private var nativeGlassEnabled = NSApp.isActive
     @State private var showingMetalHUDApps = false
     @State private var showingMetalHUDTuner = false
+    @State private var displayedStatus = TaskStatus()
+    @State private var isStatusPanelVisible = false
 
     private let columns = [GridItem(.adaptive(minimum: 280), spacing: 18)]
     private var hasCustomWallpaper: Bool { model.configuration.customWallpaperPath != nil }
@@ -36,7 +38,10 @@ struct DashboardView: View {
             statusPanel
                 .padding(.horizontal, 28)
                 .padding(.bottom, 22)
-                .animation(.easeInOut(duration: 0.45), value: model.status.phase != .idle)
+                .compositingGroup()
+                .opacity(isStatusPanelVisible ? 1 : 0)
+                .allowsHitTesting(isStatusPanelVisible)
+                .accessibilityHidden(!isStatusPanelVisible)
         }
         .background(WindowAppearanceConfigurator(nativeGlassEnabled: $nativeGlassEnabled, colorScheme: effectiveColorScheme, isEnabled: useLiquidGlassUI))
         .sheet(isPresented: $model.showingDiskManager) { DiskManagerView().environmentObject(model) }
@@ -73,39 +78,53 @@ struct DashboardView: View {
                 nativeGlassEnabled = NSApp.isActive
             }
         }
-        .onAppear { MenuCommandCoordinator.shared.install(model: model) }
+        .onAppear {
+            MenuCommandCoordinator.shared.install(model: model)
+            guard model.status.phase != .idle else { return }
+            displayedStatus = model.status
+            isStatusPanelVisible = true
+        }
+        .onChange(of: model.status) { _, newStatus in
+            if newStatus.phase == .idle {
+                withAnimation(.easeInOut(duration: 0.45)) {
+                    isStatusPanelVisible = false
+                }
+            } else {
+                displayedStatus = newStatus
+                withAnimation(.easeInOut(duration: 0.45)) {
+                    isStatusPanelVisible = true
+                }
+            }
+        }
     }
 
-    @ViewBuilder private var statusPanel: some View {
-        if model.status.phase != .idle {
-            HStack(spacing: 12) {
-                HStack(spacing: 8) {
-                    Image(systemName: statusIcon)
-                    Text(model.status.message).font(.headline)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-                .layoutPriority(1)
-                if let progress = model.status.progress {
-                    ProgressView(value: progress)
-                        .tint(.purple)
-                        .frame(minWidth: 160)
-                }
-                Spacer(minLength: 8)
-                if model.isHoYoAssistantRunning {
-                    Button(tr("取消并恢复 hosts", "Cancel and restore hosts")) { model.cancelHoYoAssistant() }
-                }
-                Text(AppLanguage.phase(model.status.phase))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+    private var statusPanel: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: statusIcon)
+                Text(displayedStatus.message).font(.headline)
                     .lineLimit(1)
+                    .truncationMode(.middle)
             }
-            .liquidGlassButtonStyle()
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .liquidGlassPanel(cornerRadius: 12, colorScheme: effectiveColorScheme, usesLiquidGlassUI: useLiquidGlassUI, nativeGlassEnabled: nativeGlassEnabled)
-            .transition(.opacity)
+            .layoutPriority(1)
+            if let progress = displayedStatus.progress {
+                ProgressView(value: progress)
+                    .tint(.purple)
+                    .frame(minWidth: 160)
+            }
+            Spacer(minLength: 8)
+            if model.isHoYoAssistantRunning {
+                Button(tr("取消并恢复 hosts", "Cancel and restore hosts")) { model.cancelHoYoAssistant() }
+            }
+            Text(AppLanguage.phase(displayedStatus.phase))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
+        .liquidGlassButtonStyle()
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .liquidGlassPanel(cornerRadius: 12, colorScheme: effectiveColorScheme, usesLiquidGlassUI: useLiquidGlassUI, nativeGlassEnabled: nativeGlassEnabled)
     }
 
     @ViewBuilder private var featureCards: some View {
@@ -186,7 +205,7 @@ struct DashboardView: View {
     }
 
     private var statusIcon: String {
-        switch model.status.phase {
+        switch displayedStatus.phase {
         case .succeeded: "checkmark.circle.fill"
         case .failed: "xmark.octagon.fill"
         case .cancelled: "minus.circle.fill"
