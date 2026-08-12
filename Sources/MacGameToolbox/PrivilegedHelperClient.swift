@@ -6,8 +6,10 @@ import OSLog
 import Security
 
 public final class PrivilegedHelperClient: PrivilegedOperating, @unchecked Sendable {
-    static let serviceName = "com.iven.macgametoolbox.helper.v8"
-    static let installedHelperPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v8"
+    static let serviceName = "com.iven.macgametoolbox.helper.v9"
+    static let appBundleIdentifier = "com.iven.macgametoolbox"
+    static let installedHelperPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v9"
+    static let installedPlistPath = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.v9.plist"
     private let coordinator = PrivilegedHelperCoordinator()
 
     public init() {}
@@ -15,7 +17,7 @@ public final class PrivilegedHelperClient: PrivilegedOperating, @unchecked Senda
     public func diagnosticStatus() -> String {
         let installed = FileManager.default.fileExists(atPath: Self.installedHelperPath)
         let signing = Self.teamIdentifier() == nil ? "development signing" : "Developer ID signing"
-        return "persistent helper v8: \(installed ? "installed" : "not installed"), \(signing)"
+        return "persistent helper v9: \(installed ? "installed" : "not installed"), \(signing)"
     }
 
     public func perform(_ operation: PrivilegedOperation) async throws {
@@ -55,6 +57,19 @@ public final class PrivilegedHelperClient: PrivilegedOperating, @unchecked Senda
               let values = information as? [String: Any] else { return nil }
         return values[kSecCodeInfoTeamIdentifier as String] as? String
     }
+
+    static var hasCurrentRegistration: Bool {
+        let bundledHelperPath = Bundle.main.bundleURL
+            .appendingPathComponent("Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper")
+            .path
+        guard FileManager.default.fileExists(atPath: installedHelperPath),
+              FileManager.default.contentsEqual(atPath: installedHelperPath, andPath: bundledHelperPath),
+              let data = try? Data(contentsOf: URL(fileURLWithPath: installedPlistPath)),
+              let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+              plist["Label"] as? String == serviceName,
+              let identifiers = plist["AssociatedBundleIdentifiers"] as? [String] else { return false }
+        return identifiers.contains(appBundleIdentifier)
+    }
 }
 
 private actor PrivilegedHelperCoordinator {
@@ -62,7 +77,7 @@ private actor PrivilegedHelperCoordinator {
     private var installedThisSession = false
 
     func perform(_ request: PrivilegedRequest) async throws {
-        if !FileManager.default.fileExists(atPath: PrivilegedHelperClient.installedHelperPath) {
+        if !PrivilegedHelperClient.hasCurrentRegistration {
             try await install()
         }
         let data = try JSONEncoder().encode(request)
@@ -82,9 +97,8 @@ private actor PrivilegedHelperCoordinator {
     private func install() async throws {
         let helperURL = Bundle.main.bundleURL
             .appendingPathComponent("Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper")
-        guard FileManager.default.isExecutableFile(atPath: helperURL.path),
-              Bundle.main.bundleURL.standardizedFileURL.path == "/Applications/Mac 游戏工具箱.app" else {
-            throw ToolboxError.helperUnavailable("Install the app in /Applications before enabling privileged features")
+        guard FileManager.default.isExecutableFile(atPath: helperURL.path) else {
+            throw ToolboxError.helperUnavailable("The app bundle does not contain the privileged helper")
         }
         DiagnosticFileLogger.write("Requesting one-time persistent helper installation")
         let script = """

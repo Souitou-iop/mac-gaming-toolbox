@@ -568,9 +568,9 @@ final class AppModel: ObservableObject {
 
     private static func runCoreFeatureRepairScript() async throws {
         let shellScript = """
-        /bin/launchctl bootout system /Library/LaunchDaemons/com.iven.macgametoolbox.helper.v8.plist 2>/dev/null || true
-        /bin/launchctl enable system/com.iven.macgametoolbox.helper.v8
-        /bin/launchctl bootstrap system /Library/LaunchDaemons/com.iven.macgametoolbox.helper.v8.plist
+        /bin/launchctl bootout system /Library/LaunchDaemons/com.iven.macgametoolbox.helper.v9.plist 2>/dev/null || true
+        /bin/launchctl enable system/com.iven.macgametoolbox.helper.v9
+        /bin/launchctl bootstrap system /Library/LaunchDaemons/com.iven.macgametoolbox.helper.v9.plist
         """
         let appleScript = """
         on run argv

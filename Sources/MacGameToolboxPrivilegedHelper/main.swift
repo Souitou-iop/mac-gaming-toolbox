@@ -6,11 +6,16 @@ import MacGameToolboxCore
 import Security
 import OSLog
 
-private let serviceName = "com.iven.macgametoolbox.helper.v8"
-private let installedHelperPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v8"
-private let installedPlistPath = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.v8.plist"
-private let requirementPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v8.requirement"
-private let expectedAppPath = "/Applications/Mac 游戏工具箱.app"
+private let serviceName = "com.iven.macgametoolbox.helper.v9"
+private let installedHelperPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v9"
+private let installedPlistPath = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.v9.plist"
+private let requirementPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v9.requirement"
+private let legacyServiceName = "com.iven.macgametoolbox.helper.v8"
+private let legacyPaths = [
+    "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v8",
+    "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v8.requirement",
+    "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.v8.plist"
+]
 private let hoyoDomains = GamingService.hoyoDomains
 private let logger = Logger(subsystem: "com.iven.macgametoolbox", category: "PrivilegedHelper")
 
@@ -99,15 +104,6 @@ final class ListenerDelegate: NSObject, NSXPCListenerDelegate {
         var staticCode: SecStaticCode?
         guard SecCodeCopyStaticCode(code, [], &staticCode) == errSecSuccess, let staticCode else { return false }
 
-        let appURL = URL(fileURLWithPath: expectedAppPath)
-        guard appURL.pathExtension == "app",
-              let appBundle = Bundle(url: appURL),
-              let expectedExecutable = appBundle.executableURL?.standardizedFileURL else { return false }
-        var clientURL: CFURL?
-        guard SecCodeCopyPath(staticCode, [], &clientURL) == errSecSuccess,
-              let clientPath = (clientURL as URL?)?.standardizedFileURL,
-              clientPath == appURL.standardizedFileURL || clientPath == expectedExecutable else { return false }
-
         var information: CFDictionary?
         guard SecCodeCopySigningInformation(staticCode, SecCSFlags(rawValue: kSecCSSigningInformation), &information) == errSecSuccess,
               let dictionary = information as? [String: Any],
@@ -135,8 +131,12 @@ func containingAppURL() -> URL? {
 }
 
 func installPersistentHelper(for appPath: String) throws {
-    guard URL(fileURLWithPath: appPath).standardizedFileURL.path == expectedAppPath else { throw HelperError.invalidPath }
-    let appURL = URL(fileURLWithPath: expectedAppPath)
+    let appURL = URL(fileURLWithPath: appPath).resolvingSymlinksInPath().standardizedFileURL
+    guard appURL.pathExtension == "app",
+          containingAppURL()?.resolvingSymlinksInPath().standardizedFileURL == appURL,
+          selfExecutableURL()?.resolvingSymlinksInPath().standardizedFileURL == appURL
+            .appendingPathComponent("Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper")
+            .resolvingSymlinksInPath().standardizedFileURL else { throw HelperError.invalidPath }
     var appCode: SecStaticCode?
     guard SecStaticCodeCreateWithPath(appURL as CFURL, [], &appCode) == errSecSuccess, let appCode,
           SecStaticCodeCheckValidity(appCode, SecCSFlags(rawValue: kSecCSStrictValidate), nil) == errSecSuccess else {
@@ -156,6 +156,10 @@ func installPersistentHelper(for appPath: String) throws {
 
     let fileManager = FileManager.default
     try fileManager.createDirectory(atPath: "/Library/PrivilegedHelperTools", withIntermediateDirectories: true)
+    _ = try? run("/bin/launchctl", ["bootout", "system/\(legacyServiceName)"])
+    for path in legacyPaths where fileManager.fileExists(atPath: path) {
+        try fileManager.removeItem(atPath: path)
+    }
     _ = try? run("/bin/launchctl", ["bootout", "system/\(serviceName)"])
 
     guard let sourceURL = selfExecutableURL() else { throw HelperError.invalidPath }
@@ -169,6 +173,7 @@ func installPersistentHelper(for appPath: String) throws {
     let plist: [String: Any] = [
         "Label": serviceName,
         "ProgramArguments": [installedHelperPath],
+        "AssociatedBundleIdentifiers": ["com.iven.macgametoolbox"],
         "MachServices": [serviceName: true],
         "RunAtLoad": true
     ]
