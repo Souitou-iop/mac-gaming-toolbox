@@ -7,7 +7,7 @@ struct MacGameToolboxApp: App {
     @StateObject private var model = AppModel()
 
     var body: some Scene {
-        Window(tr("Mac游戏工具箱", "Mac Game Toolbox", "Macゲームツールボックス"), id: "main") {
+        Window(tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス"), id: "main") {
             DashboardView()
                 .environmentObject(model)
                 .frame(minWidth: 900, minHeight: 650)
@@ -15,12 +15,12 @@ struct MacGameToolboxApp: App {
         .defaultSize(width: 1040, height: 760)
         .commandsReplaced {
             CommandGroup(replacing: .appInfo) {
-                Button(tr("关于 Mac游戏工具箱", "About Mac Game Toolbox", "Macゲームツールボックスについて")) {
+                Button(tr("关于 Mac 游戏工具箱", "About Mac Gaming Toolbox", "Macゲームツールボックスについて")) {
                     MenuCommandCoordinator.shared.showAboutPanel()
                 }
             }
             CommandGroup(replacing: .appTermination) {
-                Button(tr("退出Mac游戏工具箱", "Quit Mac Game Toolbox", "Macゲームツールボックスを終了")) {
+                Button(tr("退出 Mac 游戏工具箱", "Quit Mac Gaming Toolbox", "Macゲームツールボックスを終了")) {
                     MenuCommandCoordinator.shared.quitApplication()
                 }
                 .keyboardShortcut("q")

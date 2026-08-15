@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "MacGameToolbox",
+    defaultLocalization: "zh-Hans",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "MacGameToolboxCore", targets: ["MacGameToolboxCore"]),
@@ -14,7 +15,7 @@ let package = Package(
         .executableTarget(
             name: "MacGameToolbox",
             dependencies: ["MacGameToolboxCore"],
-            resources: [.process("Assets.xcassets")],
+            resources: [.process("Assets.xcassets"), .process("Resources")],
             linkerSettings: [.linkedFramework("ServiceManagement"), .linkedFramework("Security")]
         ),
         .executableTarget(

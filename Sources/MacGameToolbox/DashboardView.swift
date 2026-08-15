@@ -153,7 +153,7 @@ struct DashboardView: View {
     private var sidebarContent: some View {
         List(NavigationCategory.allCases, selection: $selectedCategory) { category in
             NavigationLink(value: category) {
-                Label(tr(category.titleZh, category.titleEn), systemImage: category.iconName)
+                Label(tr(category.titleZh, category.titleEn, category.titleJa), systemImage: category.iconName)
                     .badge(badgeForCategory(category))
             }
         }
@@ -203,6 +203,7 @@ struct DashboardView: View {
                 .allowsHitTesting(isStatusPanelVisible)
                 .accessibilityHidden(!isStatusPanelVisible)
         }
+        .navigationTitle(tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス"))
     }
 
     private var sidebarFooter: some View {
@@ -210,7 +211,7 @@ struct DashboardView: View {
             Circle()
                 .fill(model.metalHUDEnabled ? Color.green : Color.secondary)
                 .frame(width: 7, height: 7)
-            Text(model.metalHUDEnabled ? tr("Metal HUD 已开启", "Metal HUD Active") : tr("工具箱就绪", "Toolbox Ready"))
+            Text(model.metalHUDEnabled ? tr("Metal HUD 已开启", "Metal HUD Active", "Metal HUD 有効") : tr("工具箱就绪", "Toolbox Ready", "ツールボックス準備完了"))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             Spacer()

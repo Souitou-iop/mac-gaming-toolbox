@@ -74,6 +74,12 @@ final class AppModel: ObservableObject {
             do {
                 configuration = try await configurationStore.load()
                 AppLanguage.currentPreference = configuration.languagePreference
+                DispatchQueue.main.async {
+                    let localizedTitle = tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス")
+                    for window in NSApp.windows where window.canBecomeMain {
+                        window.title = localizedTitle
+                    }
+                }
             }
             catch { report(error) }
             metalHUDEnabled = await gamingService.metalHUDEnabled()
@@ -743,6 +749,12 @@ final class AppModel: ObservableObject {
         AppLanguage.currentPreference = preference
         saveConfiguration()
         objectWillChange.send()
+        DispatchQueue.main.async {
+            let localizedTitle = tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス")
+            for window in NSApp.windows where window.canBecomeMain {
+                window.title = localizedTitle
+            }
+        }
     }
 
     private func saveConfiguration() {
