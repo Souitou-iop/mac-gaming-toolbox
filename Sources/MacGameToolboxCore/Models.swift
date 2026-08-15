@@ -429,6 +429,75 @@ public enum NavigationLayoutMode: String, Codable, CaseIterable, Sendable {
     }
 }
 
+public enum WineBottleType: String, Codable, CaseIterable, Sendable {
+    case crossover = "CrossOver"
+    case whisky = "Whisky"
+    case heroic = "Heroic"
+    case customWine = "Wine Prefix"
+    case other = "Other"
+
+    public var iconName: String {
+        switch self {
+        case .crossover: return "shippingbox.fill"
+        case .whisky: return "wineglass.fill"
+        case .heroic: return "gamecontroller.fill"
+        case .customWine: return "folder.fill.badge.gearshape"
+        case .other: return "folder.fill"
+        }
+    }
+}
+
+public struct WineBottle: Identifiable, Codable, Equatable, Sendable {
+    public var id: String { path }
+    public let name: String
+    public let type: WineBottleType
+    public let path: String
+    public let windowsVersion: String?
+    public let installedApps: [String]
+
+    public init(name: String, type: WineBottleType, path: String, windowsVersion: String? = nil, installedApps: [String] = []) {
+        self.name = name
+        self.type = type
+        self.path = path
+        self.windowsVersion = windowsVersion
+        self.installedApps = installedApps
+    }
+}
+
+public struct GameSaveLocation: Identifiable, Codable, Equatable, Sendable {
+    public var id: String { path }
+    public let bottleName: String
+    public let gameName: String
+    public let category: String
+    public let path: String
+    public let sizeFormatted: String
+    public let lastModified: Date
+
+    public init(bottleName: String, gameName: String, category: String, path: String, sizeFormatted: String, lastModified: Date) {
+        self.bottleName = bottleName
+        self.gameName = gameName
+        self.category = category
+        self.path = path
+        self.sizeFormatted = sizeFormatted
+        self.lastModified = lastModified
+    }
+}
+
+public struct PerAppMetalHUDProfile: Identifiable, Codable, Equatable, Sendable {
+    public var id: String { appPath }
+    public var appPath: String
+    public var appName: String
+    public var options: MetalHUDOptions
+    public var updatedAt: Date
+
+    public init(appPath: String, appName: String, options: MetalHUDOptions, updatedAt: Date = Date()) {
+        self.appPath = appPath
+        self.appName = appName
+        self.options = options
+        self.updatedAt = updatedAt
+    }
+}
+
 public struct AppConfiguration: Codable, Equatable, Sendable {
     public var schemaVersion = 3
     public var didImportLegacyConfiguration = false
@@ -443,6 +512,8 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
     public var excludesSensitiveCacheFiles = true
     public var metalHUDOptions = MetalHUDOptions()
     public var navigationLayoutMode: NavigationLayoutMode = .sidebar
+    public var perAppHUDProfiles: [PerAppMetalHUDProfile] = []
+    public var savedGameBackupsDirectory: String?
 
     public init() {}
 
@@ -450,6 +521,7 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
         case schemaVersion, didImportLegacyConfiguration, defaultPaths, diskPresets
         case automaticallyRestoreMountsOnLaunch, restorableDiskMounts, hostnameBackup, customWallpaperPath
         case recentMetalHUDApps, hoYoWaitSeconds, excludesSensitiveCacheFiles, metalHUDOptions, navigationLayoutMode
+        case perAppHUDProfiles, savedGameBackupsDirectory
     }
 
     public init(from decoder: Decoder) throws {
@@ -468,6 +540,8 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
         excludesSensitiveCacheFiles = try container.decodeIfPresent(Bool.self, forKey: .excludesSensitiveCacheFiles) ?? true
         metalHUDOptions = try container.decodeIfPresent(MetalHUDOptions.self, forKey: .metalHUDOptions) ?? MetalHUDOptions()
         navigationLayoutMode = try container.decodeIfPresent(NavigationLayoutMode.self, forKey: .navigationLayoutMode) ?? .sidebar
+        perAppHUDProfiles = try container.decodeIfPresent([PerAppMetalHUDProfile].self, forKey: .perAppHUDProfiles) ?? []
+        savedGameBackupsDirectory = try container.decodeIfPresent(String.self, forKey: .savedGameBackupsDirectory)
     }
 }
 

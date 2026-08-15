@@ -698,3 +698,62 @@ actor MockRunner: CommandRunning {
     #expect(results["disk4s1"] != nil)
     #expect(results["disk1000s1"] != nil)
 }
+
+@Test func gameSaveFinderScansAppDataAndSavedGames() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let bottlePath = root.appendingPathComponent("TestBottle")
+    let appDataLocal = bottlePath.appendingPathComponent("drive_c/users/crossover/AppData/Local/EldenRing")
+    let savedGames = bottlePath.appendingPathComponent("drive_c/users/crossover/Saved Games/Cyberpunk2077")
+    try FileManager.default.createDirectory(at: appDataLocal, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: savedGames, withIntermediateDirectories: true)
+    try "save data 1".write(to: appDataLocal.appendingPathComponent("save.dat"), atomically: true, encoding: .utf8)
+    try "save data 2".write(to: savedGames.appendingPathComponent("manualsave_0.sav"), atomically: true, encoding: .utf8)
+
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let finder = GameSaveFinderService()
+    let bottle = WineBottle(name: "TestBottle", type: .crossover, path: bottlePath.path)
+    let saves = await finder.scanSaveDirectories(in: bottle)
+
+    #expect(saves.count == 2)
+    let gameNames = Set(saves.map(\.gameName))
+    #expect(gameNames.contains("EldenRing"))
+    #expect(gameNames.contains("Cyberpunk2077"))
+}
+
+@Test func perAppProfilesRoundTripThroughConfiguration() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let store = ConfigurationStore(configurationURL: root.appendingPathComponent("configuration.json"))
+    var config = AppConfiguration()
+    let customOpts = MetalHUDOptions(scale: 0.8, alignment: "bottomleft", elements: ["fps", "gputime"])
+    config.perAppHUDProfiles = [
+        PerAppMetalHUDProfile(appPath: "/Applications/Cyberpunk.app", appName: "Cyberpunk", options: customOpts)
+    ]
+    try await store.save(config)
+
+    let loaded = try await store.load(homeURL: root)
+    #expect(loaded.perAppHUDProfiles.count == 1)
+    #expect(loaded.perAppHUDProfiles.first?.appPath == "/Applications/Cyberpunk.app")
+    #expect(loaded.perAppHUDProfiles.first?.options.scale == 0.8)
+    #expect(loaded.perAppHUDProfiles.first?.options.alignment == "bottomleft")
+}
+
+@Test func performanceSnapshotGeneratesValidMarkdown() async throws {
+    let snapshotService = PerformanceSnapshotService()
+    let opts = MetalHUDOptions(scale: 0.5, alignment: "topright", elements: ["fps", "memory"])
+    let report = await snapshotService.generateSnapshotReport(metalHUDOptions: opts, activeApp: "MiSide.app")
+
+    #expect(report.contains("# Mac 游戏工具箱 - 性能诊断快照报告"))
+    #expect(report.contains("MiSide.app"))
+    #expect(report.contains("MTL_HUD_ENABLED=1"))
+    #expect(report.contains("0.50"))
+    #expect(report.contains("Apple Silicon"))
+}
+
+@Test func wineBottleTypesHaveAppropriateIcons() {
+    #expect(WineBottleType.crossover.iconName == "shippingbox.fill")
+    #expect(WineBottleType.whisky.iconName == "wineglass.fill")
+    #expect(WineBottleType.heroic.iconName == "gamecontroller.fill")
+    #expect(WineBottleType.customWine.iconName == "folder.fill.badge.gearshape")
+}
+

@@ -33,6 +33,12 @@ final class AppModel: ObservableObject {
     @Published var selectedInterferingPIDs = Set<Int32>()
     @Published var isScanningInterferingProcesses = false
     @Published var isTerminatingInterferingProcesses = false
+    @Published var isGamingFocusActive = false
+    @Published var discoveredBottles: [WineBottle] = []
+    @Published var selectedBottleID: String? = nil
+    @Published var bottleGameSaves: [GameSaveLocation] = []
+    @Published var isScanningSaves = false
+    @Published var isBackingUpSave = false
 
     private let privileged = PrivilegedHelperClient()
     private let configurationStore: ConfigurationStore
@@ -42,6 +48,9 @@ final class AppModel: ObservableObject {
     private let cacheService: CacheService
     private let wallpaperService: WallpaperService
     private let diagnosticsService = DiagnosticsService()
+    private let focusBooster = GamingFocusBooster()
+    private let saveFinderService = GameSaveFinderService()
+    private let snapshotService = PerformanceSnapshotService()
     private var hoyoTask: Task<Void, Never>?
     private var automaticMountTask: Task<Void, Never>?
     private var didLaunch = false
@@ -99,8 +108,9 @@ final class AppModel: ObservableObject {
 
     func launchRecordedAppWithMetalHUD(_ path: String) {
         let applicationURL = URL(fileURLWithPath: path)
+        let effectiveOpts = effectiveOptionsForApp(path: path)
         runTask(tr("正在使用 MetalHUD 启动 App", "Launching app with MetalHUD")) {
-            try await self.gamingService.launchWithMetalHUD(applicationPath: applicationURL.path, options: self.configuration.metalHUDOptions)
+            try await self.gamingService.launchWithMetalHUD(applicationPath: applicationURL.path, options: effectiveOpts)
             self.rememberMetalHUDApp(applicationURL)
             return tr("已使用 MetalHUD 打开 \(applicationURL.deletingPathExtension().lastPathComponent)", "Opened \(applicationURL.deletingPathExtension().lastPathComponent) with MetalHUD")
         }
@@ -810,6 +820,132 @@ final class AppModel: ObservableObject {
             try? await Task.sleep(for: .seconds(autoClearAfter))
             guard !Task.isCancelled else { return }
             await MainActor.run { self?.status = TaskStatus() }
+        }
+    }
+
+    // MARK: - Gaming Focus Booster (Caffeinate)
+
+    func toggleGamingFocus() {
+        Task {
+            let active = await focusBooster.isActive
+            if active {
+                await focusBooster.stop()
+                isGamingFocusActive = false
+                setTransientStatus(.succeeded, message: tr("已退出游戏专注模式", "Exited gaming focus mode"))
+            } else {
+                let success = await focusBooster.start()
+                isGamingFocusActive = success
+                if success {
+                    setTransientStatus(.succeeded, message: tr("已开启游戏专注模式 (防休眠/防息屏)", "Gaming focus mode active (sleep & dimming prevented)"))
+                } else {
+                    setTransientStatus(.failed, message: tr("启动游戏专注模式失败", "Failed to start gaming focus mode"))
+                }
+            }
+        }
+    }
+
+    // MARK: - Game Save Finder & Bottle Backup
+
+    func scanBottlesAndSaves() {
+        isScanningSaves = true
+        Task {
+            let bottles = await saveFinderService.discoverBottles()
+            discoveredBottles = bottles
+            if let current = selectedBottleID, let match = bottles.first(where: { $0.id == current }) {
+                bottleGameSaves = await saveFinderService.scanSaveDirectories(in: match)
+            } else if let first = bottles.first {
+                selectedBottleID = first.id
+                bottleGameSaves = await saveFinderService.scanSaveDirectories(in: first)
+            } else {
+                selectedBottleID = nil
+                bottleGameSaves = []
+            }
+            isScanningSaves = false
+        }
+    }
+
+    func selectBottle(id: String) {
+        selectedBottleID = id
+        guard let bottle = discoveredBottles.first(where: { $0.id == id }) else { return }
+        isScanningSaves = true
+        Task {
+            bottleGameSaves = await saveFinderService.scanSaveDirectories(in: bottle)
+            isScanningSaves = false
+        }
+    }
+
+    func revealSaveLocationInFinder(_ location: GameSaveLocation) {
+        NSWorkspace.shared.selectFile(location.path, inFileViewerRootedAtPath: (location.path as NSString).deletingLastPathComponent)
+    }
+
+    func exportSaveBackup(_ location: GameSaveLocation) {
+        let panel = NSSavePanel()
+        panel.title = tr("备份游戏存档", "Backup Game Save")
+        panel.prompt = tr("备份为 Zip", "Backup as Zip")
+        panel.allowedContentTypes = [.zip]
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd_HHmm"
+        panel.nameFieldStringValue = "\(location.gameName)_Save_\(formatter.string(from: Date())).zip"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        isBackingUpSave = true
+        runTask(tr("正在打包游戏存档…", "Packaging game save…")) {
+            try await self.saveFinderService.createBackupArchive(sourceDirectoryPath: location.path, destinationZipPath: url.path)
+            self.isBackingUpSave = false
+            return tr("已成功备份存档至：\(url.lastPathComponent)", "Saved backup to: \(url.lastPathComponent)")
+        }
+    }
+
+    // MARK: - Per-App Metal HUD Profiles
+
+    func profileForApp(path: String) -> PerAppMetalHUDProfile? {
+        configuration.perAppHUDProfiles.first { $0.appPath == path }
+    }
+
+    func saveProfileForApp(path: String, options: MetalHUDOptions) {
+        let appName = ((path as NSString).lastPathComponent as NSString).deletingPathExtension
+        if let idx = configuration.perAppHUDProfiles.firstIndex(where: { $0.appPath == path }) {
+            configuration.perAppHUDProfiles[idx].options = options
+            configuration.perAppHUDProfiles[idx].updatedAt = Date()
+        } else {
+            configuration.perAppHUDProfiles.append(PerAppMetalHUDProfile(appPath: path, appName: appName, options: options))
+        }
+        saveConfiguration()
+        setTransientStatus(.succeeded, message: tr("已保存 \(appName) 的专属 HUD 配置", "Saved custom HUD profile for \(appName)"))
+    }
+
+    func removeProfileForApp(path: String) {
+        configuration.perAppHUDProfiles.removeAll { $0.appPath == path }
+        saveConfiguration()
+        setTransientStatus(.succeeded, message: tr("已恢复默认 HUD 配置", "Restored default HUD profile"))
+    }
+
+    func effectiveOptionsForApp(path: String) -> MetalHUDOptions {
+        profileForApp(path: path)?.options ?? configuration.metalHUDOptions
+    }
+
+    // MARK: - Performance Snapshot Exporter
+
+    func exportPerformanceSnapshot(for appPath: String? = nil) {
+        let panel = NSSavePanel()
+        panel.title = tr("导出性能诊断快照报告", "Export Performance Snapshot Report")
+        panel.prompt = tr("导出报告", "Export Report")
+        panel.allowedContentTypes = [UTType(filenameExtension: "md") ?? .plainText]
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd_HHmmss"
+        panel.nameFieldStringValue = "MetalHUD_PerformanceSnapshot_\(formatter.string(from: Date())).md"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        Task {
+            let opts = appPath.flatMap { self.profileForApp(path: $0)?.options } ?? self.configuration.metalHUDOptions
+            let report = await self.snapshotService.generateSnapshotReport(metalHUDOptions: opts, activeApp: appPath)
+            do {
+                try report.write(to: url, atomically: true, encoding: .utf8)
+                self.setTransientStatus(.succeeded, message: tr("已成功导出性能快照报告", "Performance snapshot exported"))
+                NSWorkspace.shared.selectFile(url.path, inFileViewerRootedAtPath: url.deletingLastPathComponent().path)
+            } catch {
+                self.report(error)
+            }
         }
     }
 }

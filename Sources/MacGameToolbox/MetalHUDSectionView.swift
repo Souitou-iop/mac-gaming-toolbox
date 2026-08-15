@@ -312,12 +312,20 @@ public struct MetalHUDSectionView: View {
                 set: { var opts = model.configuration.metalHUDOptions; opts.encoderTimingEnabled = $0; model.updateMetalHUDOptions(opts) }
             ))
 
-            HStack {
+            HStack(spacing: 12) {
                 Button {
                     model.exportRecentHUDLogs()
                 } label: {
-                    Label(tr("导出最近 10 分钟 Metal HUD 日志", "Export Metal HUD Logs"), systemImage: "square.and.arrow.up")
+                    Label(tr("导出最近 Metal HUD 日志", "Export HUD Logs"), systemImage: "doc.text")
                 }
+                .controlSize(.regular)
+
+                Button {
+                    model.exportPerformanceSnapshot()
+                } label: {
+                    Label(tr("导出性能诊断快照报告 (Markdown)", "Export Performance Snapshot (.md)"), systemImage: "sparkles.rectangle.stack")
+                }
+                .buttonStyle(.borderedProminent)
                 .controlSize(.regular)
             }
             .padding(.top, 4)
@@ -328,7 +336,20 @@ public struct MetalHUDSectionView: View {
     // MARK: - Recent Apps Box
 
     private var recentAppsBox: some View {
-        GroupBox(label: Text(tr("快捷启动游戏", "Quick Launch Games")).font(.headline)) {
+        GroupBox(label:
+            HStack(spacing: 8) {
+                Text(tr("快捷启动游戏 (支持单应用专属 HUD 配置)", "Quick Launch Games (Per-App Profiles)"))
+                    .font(.headline)
+                if !model.configuration.perAppHUDProfiles.isEmpty {
+                    Text(tr("\(model.configuration.perAppHUDProfiles.count) 个专属方案", "\(model.configuration.perAppHUDProfiles.count) custom profiles"))
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.green.opacity(0.12), in: Capsule())
+                        .foregroundStyle(.green)
+                }
+            }
+        ) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(model.configuration.recentMetalHUDApps) { app in
@@ -341,10 +362,21 @@ public struct MetalHUDSectionView: View {
     }
 
     private func recentAppTile(_ app: RecentMetalHUDApp) -> some View {
-        VStack(spacing: 6) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
-                .resizable()
-                .frame(width: 44, height: 44)
+        let hasCustomProfile = model.profileForApp(path: app.path) != nil
+
+        return VStack(spacing: 6) {
+            ZStack(alignment: .topTrailing) {
+                Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
+                    .resizable()
+                    .frame(width: 44, height: 44)
+
+                if hasCustomProfile {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 2, y: -2)
+                }
+            }
 
             Text(app.displayName)
                 .font(.caption)
@@ -360,6 +392,22 @@ public struct MetalHUDSectionView: View {
         .padding(8)
         .background(Color(nsColor: .controlBackgroundColor).opacity(0.4), in: RoundedRectangle(cornerRadius: 8))
         .contextMenu {
+            if hasCustomProfile {
+                Button(tr("恢复为全局 HUD 配置", "Reset to Global HUD")) {
+                    model.removeProfileForApp(path: app.path)
+                }
+            } else {
+                Button(tr("将当前 HUD 参数设为专属方案", "Set Current HUD as App Profile")) {
+                    model.saveProfileForApp(path: app.path, options: model.configuration.metalHUDOptions)
+                }
+            }
+
+            Button(tr("为此游戏生成性能诊断快照…", "Generate Snapshot Report…")) {
+                model.exportPerformanceSnapshot(for: app.path)
+            }
+
+            Divider()
+
             Button(tr("移出列表", "Remove from list"), role: .destructive) {
                 model.removeRecentMetalHUDApp(app)
             }

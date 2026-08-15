@@ -15,15 +15,60 @@ public struct GameBoostSectionView: View {
             GamingSectionHeader(
                 icon: "bolt.fill",
                 title: tr("游戏加速与启动优化", "Game Boost & Launch Assistant"),
-                subtitle: tr("优化 Windows 转译游戏调度优先级，辅助绕过特定启动网络校验", "Optimize Wine process scheduling priority and assist launcher network validation"),
+                subtitle: tr("游戏专注防休眠、Wine 进程算力提速、手柄低延迟与启动辅助", "Gaming focus booster, Wine process priority tuning, controller latency & launch assistance"),
                 accentColor: .cyan
             )
+
+            // Gaming Focus & Anti-Sleep Mode Box (Direction 3)
+            gamingFocusBox
 
             // CrossOver & Wine Priority Boost Box
             winePriorityBoostBox
 
+            // Controller Latency & Game Mode Tips Box (Direction 3)
+            controllerAndGameModeBox
+
             // HoYoGames Launch Assistant Box
             hoYoAssistantBox
+        }
+    }
+
+    // MARK: - Gaming Focus & Anti-Sleep Box
+
+    private var gamingFocusBox: some View {
+        GroupBox(label:
+            HStack(spacing: 8) {
+                Label(tr("游戏专注模式 (防休眠 / 防降频)", "Gaming Focus & Anti-Sleep"), systemImage: "flame.fill")
+                    .font(.headline)
+                    .foregroundStyle(.orange)
+                LiveStatusBadge(model.isGamingFocusActive ? .active : .idle, title: model.isGamingFocusActive ? tr("专注中 (已阻止休眠)", "Active (Sleep Blocked)") : tr("未开启", "Inactive"))
+            }
+        ) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(tr("运行原生 caffeinate 守护进程，在游戏、挂机挂机或编译着色器期间阻止 macOS 自动熄屏、空闲降频和系统休眠，保障最高性能持续输出。",
+                        "Runs native caffeinate daemon to prevent display dimming, CPU power throttling, and system sleep during gaming or shader compilation."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Divider()
+
+                HStack(spacing: 12) {
+                    Button {
+                        model.toggleGamingFocus()
+                    } label: {
+                        Label(
+                            model.isGamingFocusActive ? tr("退出游戏专注模式", "Stop Gaming Focus") : tr("开启游戏专注模式", "Start Gaming Focus Mode"),
+                            systemImage: model.isGamingFocusActive ? "pause.fill" : "play.fill"
+                        )
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(model.isGamingFocusActive ? .red : .orange)
+                    .controlSize(.regular)
+
+                    Spacer()
+                }
+            }
+            .padding(6)
         }
     }
 
@@ -57,6 +102,45 @@ public struct GameBoostSectionView: View {
                     .controlSize(.regular)
 
                     Spacer()
+                }
+            }
+            .padding(6)
+        }
+    }
+
+    // MARK: - Controller Latency & Game Mode Tips Box
+
+    private var controllerAndGameModeBox: some View {
+        GroupBox(label: Label(tr("手柄蓝牙低延迟与着色器科普", "Controller Latency & Shader Optimization"), systemImage: "gamecontroller.fill").font(.headline)) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .foregroundStyle(.blue)
+                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(tr("macOS 游戏模式 (Game Mode) 极速唤醒", "macOS Game Mode Low-Latency Trigger"))
+                            .font(.caption.bold())
+                        Text(tr("系统“游戏模式”会将 PS5/Xbox 蓝牙手柄与 AirPods 的采样轮询率翻倍，大幅降低无线输入与音频延迟。建议在游戏内开启“全屏独占模式 (Full Screen)”以确保稳定触发 Game Mode。",
+                                "macOS Game Mode doubles Bluetooth polling rates for gamepads and AirPods, halving wireless latency. Use Full Screen mode in-game for automatic activation."))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Divider()
+
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "cpu.fill")
+                        .foregroundStyle(.green)
+                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(tr("着色器动态编译卡顿 (Shader Stutter) 提示", "Shader Compilation Stutter Notice"))
+                            .font(.caption.bold())
+                        Text(tr("首次进入新游戏场景时，GPTK 正在后台将 DirectX 着色器动态编译并缓存在 Metal 中，可能出现短暂掉帧，属于正常转译机制。持续游玩 5~10 分钟着色器缓存建立后，游戏帧率将趋于平稳丝滑。",
+                                "Entering new scenes triggers DirectX-to-Metal shader compilation. Temporary frame drops are normal and will smooth out after 5-10 minutes of caching."))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .padding(6)
@@ -98,22 +182,20 @@ public struct GameBoostSectionView: View {
                             Label(tr("开始运行", "Start Assistant"), systemImage: "play.fill")
                         }
                         .buttonStyle(.borderedProminent)
-                        .tint(.purple)
                         .controlSize(.regular)
                     }
 
-                    LabeledContent(tr("等待超时：", "Wait Time:")) {
-                        Picker("", selection: Binding(
-                            get: { model.configuration.hoYoWaitSeconds },
-                            set: { model.setHoYoWaitSeconds($0) }
-                        )) {
-                            ForEach([10, 15, 20], id: \.self) { sec in
-                                Text("\(sec) \(tr("秒", "sec"))").tag(sec)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(width: 140)
+                    Picker(tr("等待：", "Wait:"), selection: Binding(
+                        get: { model.configuration.hoYoWaitSeconds },
+                        set: { model.setHoYoWaitSeconds($0) }
+                    )) {
+                        Text(tr("10 秒", "10s")).tag(10)
+                        Text(tr("15 秒", "15s")).tag(15)
+                        Text(tr("20 秒", "20s")).tag(20)
                     }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 180)
+                    .disabled(model.isHoYoAssistantRunning)
 
                     Spacer()
                 }

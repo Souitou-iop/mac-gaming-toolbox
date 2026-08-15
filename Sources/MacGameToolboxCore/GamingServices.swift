@@ -583,3 +583,275 @@ public actor HostnameService {
         return String(mapped).trimmingCharacters(in: CharacterSet(charactersIn: "-."))
     }
 }
+
+// MARK: - Game Save Finder & Bottle Backup Service
+
+public actor GameSaveFinderService {
+    private let fileManager: FileManager
+    private let runner: any CommandRunning
+
+    public init(fileManager: FileManager = .default, runner: any CommandRunning = ProcessCommandRunner()) {
+        self.fileManager = fileManager
+        self.runner = runner
+    }
+
+    public func discoverBottles() async -> [WineBottle] {
+        var bottles: [WineBottle] = []
+        let home = fileManager.homeDirectoryForCurrentUser.path
+
+        // 1. CrossOver Bottles
+        let crossOverPath = (home as NSString).appendingPathComponent("Library/Application Support/CrossOver/Bottles")
+        bottles.append(contentsOf: scanBottleDirectory(at: crossOverPath, type: .crossover))
+
+        // 2. Whisky Bottles
+        let whiskyPath = (home as NSString).appendingPathComponent("Library/Application Support/com.isaacmarovitz.Whisky/Bottles")
+        bottles.append(contentsOf: scanBottleDirectory(at: whiskyPath, type: .whisky))
+
+        // 3. Heroic Bottles
+        let heroicPaths = [
+            (home as NSString).appendingPathComponent("Library/Application Support/heroic/prefixes"),
+            (home as NSString).appendingPathComponent("Games/Heroic/Prefixes")
+        ]
+        for hp in heroicPaths {
+            bottles.append(contentsOf: scanBottleDirectory(at: hp, type: .heroic))
+        }
+
+        // 4. Default Wine Prefix (~/.wine)
+        let defaultWinePath = (home as NSString).appendingPathComponent(".wine")
+        if fileManager.fileExists(atPath: (defaultWinePath as NSString).appendingPathComponent("drive_c")) {
+            bottles.append(WineBottle(name: "Default Wine (~/.wine)", type: .customWine, path: defaultWinePath))
+        }
+
+        return bottles
+    }
+
+    private func scanBottleDirectory(at basePath: String, type: WineBottleType) -> [WineBottle] {
+        guard let items = try? fileManager.contentsOfDirectory(atPath: basePath) else { return [] }
+        var result: [WineBottle] = []
+        for item in items {
+            let fullPath = (basePath as NSString).appendingPathComponent(item)
+            let driveC = (fullPath as NSString).appendingPathComponent("drive_c")
+            var isDir: ObjCBool = false
+            if fileManager.fileExists(atPath: driveC, isDirectory: &isDir), isDir.boolValue {
+                result.append(WineBottle(name: item, type: type, path: fullPath))
+            }
+        }
+        return result
+    }
+
+    public func scanSaveDirectories(in bottle: WineBottle) async -> [GameSaveLocation] {
+        var saves: [GameSaveLocation] = []
+        let driveC = (bottle.path as NSString).appendingPathComponent("drive_c")
+        let usersPath = (driveC as NSString).appendingPathComponent("users")
+        guard let userDirs = try? fileManager.contentsOfDirectory(atPath: usersPath) else { return [] }
+
+        // Directories to ignore (system/empty standard dirs)
+        let ignoredDirs: Set<String> = [
+            "microsoft", "temp", "crossover", "public", "all users", "default", "default user",
+            "crashdumps", "package cache", "d3dmetal", "dxvk", "nvidia", "amd", "intel",
+            "cefdialog", "iconcache.db", "thumbs.db", "desktop.ini", "logs", "cache"
+        ]
+
+        for userDir in userDirs {
+            let userRoot = (usersPath as NSString).appendingPathComponent(userDir)
+
+            // 1. AppData/Local & AppData/Roaming & AppData/LocalLow
+            let appDataCandidates = [
+                ("AppData/Local", (userRoot as NSString).appendingPathComponent("AppData/Local")),
+                ("AppData/LocalLow", (userRoot as NSString).appendingPathComponent("AppData/LocalLow")),
+                ("AppData/Roaming", (userRoot as NSString).appendingPathComponent("AppData/Roaming")),
+                ("Local Settings/Application Data", (userRoot as NSString).appendingPathComponent("Local Settings/Application Data"))
+            ]
+            for (cat, catPath) in appDataCandidates {
+                if let gameDirs = try? fileManager.contentsOfDirectory(atPath: catPath) {
+                    for gd in gameDirs {
+                        if ignoredDirs.contains(gd.lowercased()) || gd.hasPrefix(".") { continue }
+                        let full = (catPath as NSString).appendingPathComponent(gd)
+                        if let loc = buildSaveLocation(bottleName: bottle.name, gameName: gd, category: cat, path: full) {
+                            saves.append(loc)
+                        }
+                    }
+                }
+            }
+
+            // 2. Saved Games
+            let savedGamesPath = (userRoot as NSString).appendingPathComponent("Saved Games")
+            if let gameDirs = try? fileManager.contentsOfDirectory(atPath: savedGamesPath) {
+                for gd in gameDirs {
+                    if ignoredDirs.contains(gd.lowercased()) || gd.hasPrefix(".") { continue }
+                    let full = (savedGamesPath as NSString).appendingPathComponent(gd)
+                    if let loc = buildSaveLocation(bottleName: bottle.name, gameName: gd, category: "Saved Games", path: full) {
+                        saves.append(loc)
+                    }
+                }
+            }
+
+            // 3. Documents & Documents/My Games
+            let myGamesPath = (userRoot as NSString).appendingPathComponent("Documents/My Games")
+            if let gameDirs = try? fileManager.contentsOfDirectory(atPath: myGamesPath) {
+                for gd in gameDirs {
+                    if ignoredDirs.contains(gd.lowercased()) || gd.hasPrefix(".") { continue }
+                    let full = (myGamesPath as NSString).appendingPathComponent(gd)
+                    if let loc = buildSaveLocation(bottleName: bottle.name, gameName: gd, category: "Documents/My Games", path: full) {
+                        saves.append(loc)
+                    }
+                }
+            }
+        }
+
+        // Sort by last modified date (newest first)
+        return saves.sorted { $0.lastModified > $1.lastModified }
+    }
+
+    private func buildSaveLocation(bottleName: String, gameName: String, category: String, path: String) -> GameSaveLocation? {
+        var isDir: ObjCBool = false
+        guard fileManager.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue else { return nil }
+        guard let attrs = try? fileManager.attributesOfItem(atPath: path) else { return nil }
+        let modDate = attrs[.modificationDate] as? Date ?? Date()
+        let sizeFormatted = formatDirectorySize(at: path)
+        return GameSaveLocation(
+            bottleName: bottleName,
+            gameName: gameName,
+            category: category,
+            path: path,
+            sizeFormatted: sizeFormatted,
+            lastModified: modDate
+        )
+    }
+
+    private func formatDirectorySize(at path: String) -> String {
+        guard let enumerator = fileManager.enumerator(at: URL(fileURLWithPath: path), includingPropertiesForKeys: [.fileSizeKey], options: [.skipsHiddenFiles]) else {
+            return "0 KB"
+        }
+        var totalBytes: Int64 = 0
+        for case let fileURL as URL in enumerator {
+            if let resourceValues = try? fileURL.resourceValues(forKeys: [.fileSizeKey]), let size = resourceValues.fileSize {
+                totalBytes += Int64(size)
+            }
+        }
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useAll]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: totalBytes)
+    }
+
+    public func createBackupArchive(sourceDirectoryPath: String, destinationZipPath: String) async throws {
+        // Use ditto -c -k to create clean macOS-compatible zip archives
+        let result = try await runner.run("/usr/bin/ditto", arguments: ["-c", "-k", "--sequesterRsrc", sourceDirectoryPath, destinationZipPath])
+        if result.exitCode != 0 {
+            throw ToolboxError.commandFailed(result.errorString.isEmpty ? "Zip backup failed" : result.errorString)
+        }
+    }
+}
+
+// MARK: - Gaming Focus Booster (Caffeinate Manager)
+
+public actor GamingFocusBooster {
+    private var caffeinateProcess: Process?
+
+    public init() {}
+
+    public var isActive: Bool {
+        caffeinateProcess?.isRunning ?? false
+    }
+
+    public func start() -> Bool {
+        if isActive { return true }
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/caffeinate")
+        // -d: prevent display from sleeping
+        // -i: prevent system from idle sleeping
+        // -m: prevent disk from idle sleeping
+        p.arguments = ["-d", "-i", "-m"]
+        do {
+            try p.run()
+            caffeinateProcess = p
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    public func stop() {
+        if let p = caffeinateProcess, p.isRunning {
+            p.terminate()
+        }
+        caffeinateProcess = nil
+    }
+
+    deinit {
+        if let p = caffeinateProcess, p.isRunning {
+            p.terminate()
+        }
+    }
+}
+
+// MARK: - Performance Snapshot Service
+
+public actor PerformanceSnapshotService {
+    private let runner: any CommandRunning
+
+    public init(runner: any CommandRunning = ProcessCommandRunner()) {
+        self.runner = runner
+    }
+
+    public func generateSnapshotReport(metalHUDOptions: MetalHUDOptions, activeApp: String? = nil) async -> String {
+        let now = Date()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let dateStr = formatter.string(from: now)
+
+        var report = """
+        # Mac 游戏工具箱 - 性能诊断快照报告 (Performance Snapshot)
+        **生成时间**：\(dateStr)
+        **目标应用**：\(activeApp ?? "全局环境 (Global Environment)")
+
+        ---
+
+        ## 1. 硬件与系统环境
+        - **macOS 版本**：\(ProcessInfo.processInfo.operatingSystemVersionString)
+        - **芯片架构**：Apple Silicon (\(ProcessInfo.processInfo.activeProcessorCount) Cores)
+        - **物理内存**：\(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024)) GB
+
+        ---
+
+        ## 2. Metal HUD 调优参数
+        - **全局注入开关**：已开启 (MTL_HUD_ENABLED=1)
+        - **渲染缩放比例**：\(String(format: "%.2f", metalHUDOptions.scale))
+        - **图层不透明度**：\(Int(metalHUDOptions.opacity * 100))%
+        - **屏幕方位**：\(metalHUDOptions.alignment)
+        - **激活监控指标项 (\(metalHUDOptions.elements.count))**：\(metalHUDOptions.elements.isEmpty ? "全部默认指标" : metalHUDOptions.elements.joined(separator: ", "))
+        - **着色器编译日志**：\(metalHUDOptions.shaderLogEnabled ? "已启用" : "未启用")
+        - **编码器耗时追踪**：\(metalHUDOptions.encoderTimingEnabled ? "已启用" : "未启用")
+
+        ---
+
+        ## 3. 运行中的游戏与 Wine 兼容层进程
+        """
+
+        if let psResult = try? await runner.run("/bin/ps", arguments: ["-ax", "-o", "pid,ppid,command"]) {
+            let lines = psResult.outputString.components(separatedBy: .newlines)
+            let filtered = lines.filter { line in
+                let l = line.lowercased()
+                return l.contains("wine") || l.contains("crossover") || l.contains("whisky") || l.contains("steam") || l.contains("d3dmetal") || l.contains("game")
+            }
+            if filtered.isEmpty {
+                report += "\n- 未检测到运行中的 Wine / 游戏进程。\n"
+            } else {
+                report += "\n```text\n"
+                for l in filtered.prefix(15) {
+                    report += "\(l)\n"
+                }
+                report += "```\n"
+            }
+        }
+
+        report += """
+
+        ---
+        *由 Mac 游戏工具箱自动生成。可直接附于社区讨论或技术支持工单。*
+        """
+        return report
+    }
+}
+

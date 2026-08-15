@@ -155,9 +155,19 @@ public struct AboutSectionView: View {
         GroupBox(label: Label(tr("本分支版本增强与改进", "Fork Enhancements"), systemImage: "sparkles").font(.headline)) {
             VStack(alignment: .leading, spacing: 10) {
                 featureBullet(
-                    title: tr("全套自定义 Metal HUD 参数调优与指标定制", "Custom Metal HUD Parameter & Metric Tuning"),
-                    desc: tr("支持缩放比例（10%~100%）、不透明度（0~100%）、屏幕四角方位、精简/均衡/完整快捷预设、23 项精细化监控指标自由勾选（附带数值单位示例）与着色器/编码器日志追踪。",
-                             "Full control over scale (10-100%), opacity (0-100%), 4-corner alignments, presets, 23 granular metric toggles with unit examples, and shader/encoder diagnostics.")
+                    title: tr("全套自定义 Metal HUD 调优、单 App 方案与性能快照", "Custom Metal HUD Tuning & Performance Snapshots"),
+                    desc: tr("支持 10%~100% 缩放、0~100% 透明度、四角方位、23 项指标带单位示例、单游戏专属 HUD 方案绑定与一键导出 Markdown 性能诊断快照报告。",
+                             "Full control over scale, opacity, positions, 23 metrics with unit examples, per-app profiles, and 1-click Markdown performance snapshot export.")
+                )
+                featureBullet(
+                    title: tr("Windows 游戏存档扫描与一键 Zip 备份 (Game Save Finder)", "Windows Save Game Finder & Backup"),
+                    desc: tr("智能探测 CrossOver、Whisky 及 Wine 容器中的深层游戏存档目录（AppData、Saved Games、My Games），支持一键定位与打包备份。",
+                             "Automatically scans and backs up Windows game save directories inside CrossOver and Whisky bottles to standard zip archives.")
+                )
+                featureBullet(
+                    title: tr("Caffeinate 原生游戏专注模式与手柄低延迟优化", "Gaming Focus Anti-Sleep & Low-Latency Controller"),
+                    desc: tr("一键开启 caffeinate 守护进程阻止系统休眠与息屏，结合 macOS 游戏模式双倍蓝牙轮询率大幅降低手柄操作延迟。",
+                             "Prevents system sleep and dimming via native caffeinate, maximizing macOS Game Mode controller sampling rates.")
                 )
                 featureBullet(
                     title: tr("Metal HUD 冲突进程排查与安全重启", "Interfering Process Detection & Manager"),
@@ -165,14 +175,9 @@ public struct AboutSectionView: View {
                              "Intelligently identifies conflicting launchers and Wine daemons running prior to HUD injection for user-selected safe restarts.")
                 )
                 featureBullet(
-                    title: tr("纯原生 macOS 侧边栏架构与标准控件", "Pure Native NavigationSplitView Sidebar"),
-                    desc: tr("采用 NavigationSplitView 与标准 GroupBox、LabeledContent 控件体系重构，告别层层弹窗，完美贴合 Apple HIG 人机交互指南。",
-                             "Refactored with NavigationSplitView and standard GroupBox controls conforming to Apple HIG.")
-                )
-                featureBullet(
-                    title: tr("纯 ARM64 (Apple Silicon) 原生构建优化", "Apple Silicon ARM64 Native Optimization"),
-                    desc: tr("专为 Apple Silicon M 系列芯片优化编译与打包，启动速度极快且占用资源极低。",
-                             "Optimized specifically for Apple Silicon M-series chips with instant launch and minimal footprint.")
+                    title: tr("纯原生 macOS 侧边栏架构与纯 ARM64 构建", "Native macOS Sidebar & Pure ARM64 Build"),
+                    desc: tr("基于 NavigationSplitView 与标准 GroupBox 控件体系重构，专为 Apple Silicon 芯片纯原生编译分发。",
+                             "Refactored with NavigationSplitView and standard controls, distributed purely as native ARM64 binaries.")
                 )
             }
             .padding(6)
