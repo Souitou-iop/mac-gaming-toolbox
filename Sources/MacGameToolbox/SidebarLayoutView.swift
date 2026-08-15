@@ -51,7 +51,7 @@ public struct SidebarLayoutView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(tr("Mac游戏工具箱", "Mac Gaming"))
                         .font(.headline)
-                    Text("Toolbox v3.0")
+                    Text("Toolbox v3.1.0")
                         .font(.caption2.monospaced())
                         .foregroundStyle(.secondary)
                 }
