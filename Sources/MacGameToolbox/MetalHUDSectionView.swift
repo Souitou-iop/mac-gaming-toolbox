@@ -260,7 +260,7 @@ public struct MetalHUDSectionView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), spacing: 8)], spacing: 8) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 8)], spacing: 8) {
                 ForEach(MetalHUDElement.allElements, id: \.raw) { (element: MetalHUDElement) in
                     let isChecked = model.configuration.metalHUDOptions.elements.contains(element.raw)
                     Toggle(isOn: Binding(
@@ -277,16 +277,16 @@ public struct MetalHUDSectionView: View {
                             model.updateMetalHUDOptions(opts)
                         }
                     )) {
-                        VStack(alignment: .leading, spacing: 1) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text(tr(element.zh, element.en))
-                                .font(.subheadline)
-                            Text(element.raw)
-                                .font(.caption2.monospaced())
-                                .foregroundStyle(.tertiary)
+                                .font(.subheadline.weight(.medium))
+                            Text(tr(element.unitOrSampleZh, element.unitOrSampleEn))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .toggleStyle(.checkbox)
-                    .padding(6)
+                    .padding(8)
                     .background(Color(nsColor: .controlBackgroundColor).opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
                 }
             }

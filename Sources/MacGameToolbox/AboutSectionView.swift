@@ -153,21 +153,26 @@ public struct AboutSectionView: View {
 
     private var forkImprovementsBox: some View {
         GroupBox(label: Label(tr("本分支版本增强与改进", "Fork Enhancements"), systemImage: "sparkles").font(.headline)) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 featureBullet(
-                    title: tr("纯原生 macOS 侧边栏架构", "Pure Native Sidebar Architecture"),
-                    desc: tr("基于 NavigationSplitView 与标准 GroupBox 控件重构，完美贴合 Apple HIG 人机交互指南。",
-                             "Refactored with NavigationSplitView and standard macOS controls conforming to Apple HIG.")
+                    title: tr("全套自定义 Metal HUD 参数调优与指标定制", "Custom Metal HUD Parameter & Metric Tuning"),
+                    desc: tr("支持缩放比例（10%~100%）、不透明度（0~100%）、屏幕四角方位、精简/均衡/完整快捷预设、23 项精细化监控指标自由勾选（附带数值单位示例）与着色器/编码器日志追踪。",
+                             "Full control over scale (10-100%), opacity (0-100%), 4-corner alignments, presets, 23 granular metric toggles with unit examples, and shader/encoder diagnostics.")
                 )
                 featureBullet(
-                    title: tr("Metal HUD 冲突进程排查器", "Metal HUD Interfering Process Manager"),
-                    desc: tr("智能检测 Steam、CrossOver、Wine 服务等先于 HUD 启动的冲突进程，支持用户自主选择一键重启。",
-                             "Intelligently scans launchers and Wine services running prior to HUD injection for 1-click clean restart.")
+                    title: tr("Metal HUD 冲突进程排查与安全重启", "Interfering Process Detection & Manager"),
+                    desc: tr("智能识别先于 HUD 启动的 Steam、CrossOver、Whisky、Wine 容器进程，提供用户自主勾选并安全重启服务，彻底解决 HUD 不显示问题。",
+                             "Intelligently identifies conflicting launchers and Wine daemons running prior to HUD injection for user-selected safe restarts.")
                 )
                 featureBullet(
-                    title: tr("内嵌式调优与纯 ARM64 构建", "Embedded Tuning & Pure ARM64 Build"),
-                    desc: tr("告别层层弹窗，HUD 外观缩放与指标直接内嵌主面板，提供纯 Apple Silicon 原生优化。",
-                             "Integrated parameter sliders directly in the main panel with optimized Apple Silicon builds.")
+                    title: tr("纯原生 macOS 侧边栏架构与标准控件", "Pure Native NavigationSplitView Sidebar"),
+                    desc: tr("采用 NavigationSplitView 与标准 GroupBox、LabeledContent 控件体系重构，告别层层弹窗，完美贴合 Apple HIG 人机交互指南。",
+                             "Refactored with NavigationSplitView and standard GroupBox controls conforming to Apple HIG.")
+                )
+                featureBullet(
+                    title: tr("纯 ARM64 (Apple Silicon) 原生构建优化", "Apple Silicon ARM64 Native Optimization"),
+                    desc: tr("专为 Apple Silicon M 系列芯片优化编译与打包，启动速度极快且占用资源极低。",
+                             "Optimized specifically for Apple Silicon M-series chips with instant launch and minimal footprint.")
                 )
             }
             .padding(6)
