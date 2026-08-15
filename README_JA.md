@@ -1,78 +1,115 @@
-# Mac ゲーミングツールボックス (Mac Gaming Toolbox)
+# Mac ゲーミングツールボックス (Mac Gaming Toolbox) - 拡張フォーク版
 
 [简体中文](README.md) | [English](README_EN.md) | [日本語](README_JA.md)
 
-Mac ゲーミングツールボックスは、SwiftUI で構築された macOS ネイティブのゲーム環境最適化・支援ツールです。バージョン **3.1.0** では **Apple Silicon (ARM64)** に完全特化し、Apple Human Interface Guidelines (HIG) に準拠したサイドバーレイアウトへとフルリニューアルされました。
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-macOS%2014.0%2B-lightgrey.svg)](https://apple.com/macos)
+[![Architecture](https://img.shields.io/badge/Architecture-Apple%20Silicon%20(ARM64)-brightgreen.svg)](https://apple.com/mac)
+[![Release](https://img.shields.io/badge/Release-v3.1.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
+
+> **本リポジトリについて**：本プロジェクトは、原作者 **[@我是艾文喵 (Iven)](https://github.com/aiwentongxue)** 氏によるオープンソースプロジェクト [aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox) をベースに、UIの完全刷新・機能拡張・安定性向上を行ったフォーク版（Fork）です。
 
 ---
 
-## 🌟 主な機能
+## 💖 原作者への謝辞 (Credits & Acknowledgements)
 
-### 1. 概要ダッシュボードとリアルタイム監視
-- **ステータスハブ**: Metal HUD、Caffeinate ゲーム集中モード、SteamDeck 偽装、外部マウントディスクの状態を一目で確認。
-- **競合プロセス診断**: HUD 有効化前に起動していたゲームランチャーや Wine プロセスを検出し、安全に再起動可能。
+本プロジェクトの基盤を築き、Apple Silicon 上でのゲームプレイ環境や Wine / GPTK 最適化の道を切り拓かれた原作者 **我是艾文喵 (Iven)** 氏に心より感謝と敬意を表します。
 
-### 2. Metal HUD パフォーマンスチューナー・個別プロファイル
-- **外観パラメータの完全制御**: 10%〜100% のスケール調整、0〜100% の不透明度、画面四隅の配置に対応。
-- **23 項目の表示指標**: 単位と数値例付きのチェックボックスで、必要な情報だけを自在にカスタマイズ。
-- **ゲーム個別プロファイル**: ゲームごとに専用の HUD 設定を紐付け、ワンクリックで起動可能。
-- **性能診断スナップショット出力**: ハードウェア仕様や測定パラメータを Markdown 形式で出力し、コミュニティ共有や診断に活用。
-
-### 3. ゲーム高速化・コントローラー低遅延化
-- **Caffeinate ゲーム集中モード**: ネイティブの `caffeinate` デーモンを実行し、ゲーム中やシェーダーコンパイル時の画面消灯・スリープ・省電力スロットリングを徹底防止。
-- **macOS ゲームモード解説**: フルスクリーン表示で DualSense/Xbox コントローラーや AirPods の Bluetooth サンプリングレートを倍増させ、遅延を最小化。
-- **CrossOver / Wine プロセス優先度向上**: ゲームプロセスのスケジューリング優先度を最高（Renice -20）に引き上げ。
-
-### 4. ストレージと Windows ゲームセーブデータ管理
-- **Windows セーブデータファインダー**: CrossOver、Whisky、Heroic、Wine ボトル内の深いセーブデータ階層（`AppData/Local`、`Saved Games`、`My Games`）を自動スキャン。
-- **Finder 表示・Zip バックアップ**: ワンクリックで Finder に表示、または `.zip` 形式で一括バックアップ。
-- **カスタムディスクマウント**: 外部 SSD などをゲームデータパスにマウントし、内蔵ストレージの容量を節約。
-- **安全なキャッシュ・ログ削除**: 保護対象ファイルを除外しながら、不要なキャッシュを安全にクリーンアップ。
-
-### 5. システムツールとサービス健康診断
-- **サービス・権限状態の診断**: 特権ヘルパー（XPC通信）、バックグラウンド実行権限、Metal HUD 環境をワンクリックで診断・自動修復。
-- **多言語対応 (日本語・英語・簡体中文)**: システム言語の自動追従およびアプリ内での手動切り替えに対応。
-- **SteamDeck ホスト名偽装**: ホスト名を `steamdeck` に一時偽装し、アンチチートのホワイトリスト要件をバイパス。
+- **元リポジトリ (Upstream)**：[aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox)
+- **作者 Bilibili チャンネル**：[我是艾文喵 (Bilibili)](https://b23.tv/dV7YBJQ)
+- **作者 YouTube チャンネル**：[我是艾文喵 (YouTube)](https://youtube.com/channel/UC0TgypOLHt2fXboVw34SKVQ)
+- **公式解説動画**：[Bilibili リリース動画](https://b23.tv/qnJBcbk) · [YouTube 動画ガイド](https://youtu.be/Y9g4F0_6ipI?si=i3G9dxiXMbk2NSzY)
 
 ---
 
-## 📋 更新履歴 (v3.1.0)
+## 🚀 本フォーク版の強化・拡張機能 (Fork Enhancements)
 
-- **[UI 刷新]** macOS 標準の `NavigationSplitView` サイドバー構成と標準コントロールを採用。
-- **[Metal HUD 進化]** 10%〜100% スケール、透明度、四隅配置、23項目の表示指標、アプリ個別プロファイルに対応。
-- **[性能スナップショット]** Markdown 形式の性能診断レポート出力機能を追加。
-- **[競合プロセス診断]** 常駐ランチャーを検出し、安全に再起動して HUD 表示を確実に適用。
-- **[セーブデータ管理]** Wine/CrossOver/Whisky ボトルのセーブデータを自動スキャン・Zip 保存。
-- **[ゲーム集中モード]** Caffeinate デーモンによるスリープ・消灯・性能制限の抑止。
-- **[多言語対応]** 日本語・英語・簡体中文の三言語完全ローカライズおよびリアルタイム切替。
-- **[サービス診断]** ヘルパーとシステム権限の状態診断、過去の残存ファイルのワンクリッククリーンアップ。
-- **[ネイティブ ARM64]** Apple Silicon 専用の軽量高速ビルドに一本化し、Zip 形式で配布。
+本フォーク版では、元の利便性をそのままに、macOS ネイティブの操作性、詳細な Metal パフォーマンス測定、セーブデータ保全、多言語対応などを大幅に強化しています：
+
+### 1. 🎨 macOS ネイティブサイドバー UI への刷新
+- 従来の階層モーダルやダイアログを撤廃し、Apple HIG に完全準拠した `NavigationSplitView` サイドバー構成に刷新。
+- 標準 `GroupBox` コントロールを採用し、システムの外観（ダーク/ライトモード）に自然に馴染む洗練されたデザイン。
+
+### 2. 📊 Metal HUD 詳細パラメータ調有 & 23項目の表示指標
+- **外観の自由調整**：10%〜100% のスケールスライダー、0〜100% の不透明度、画面四隅（右上/左上/右下/左下）の配置に対応。
+- **23項目の表示指標**：FPS、GPU処理時間、表示遅延、レイヤースケール、シェーダーコンパイル状況など、各項目に**単位・数値例**を明記。
+- **高度なトレーシング**：HUD デバッグログ、シェーダーコンパイルログ、GPU エンコーダタイムラインの記録に対応。
+
+### 3. 🎯 アプリ別個別 HUD プロファイル
+- ゲームごとに専用の HUD 設定を紐付け可能（例：対戦ゲームはFPSのみの最小表示、重量級RPGはGPU・シェーダーの詳細表示）。
+- 最近のゲーム一覧から右クリックで簡単にプロファイル保存・呼び出し可能。
+
+### 4. 📝 ワンクリック性能診断スナップショット出力
+- macOS バージョン、Apple Silicon チップ仕様、HUD 設定、Wine プロセス状態を自動収集。
+- Markdown 形式（`.md`）の構造化レポートを出力し、Discord、Reddit、GitHub などでの情報共有を円滑化。
+
+### 5. 🔍 競合プロセス診断と安全な再起動
+- HUD 有効化前に起動していた Steam、CrossOver、Whisky、Wine バックグラウンドプロセスを自動検出。
+- チェックボックスで選択したプロセスを一括で安全に再起動し、「HUD がゲーム内に表示されない」問題を解決。
+
+### 6. 💾 Windows ゲームセーブデータ検出 & Zip バックアップ
+- CrossOver、Whisky、Heroic、Wine コンテナ内の深いセーブデータ階層（`AppData/Local`、`Saved Games`、`My Games` 等）を自動検出。
+- ワンクリックで Finder 表示、または標準の `.zip` 形式で一括バックアップ。コンテナ再作成時のデータ消失を防ぎます。
+
+### 7. ☕ Caffeinate ネイティブゲーム集中モード
+- システム標準の `caffeinate` デーモンを実行し、ゲーム中やシェーダーコンパイル時の画面消灯・スリープ・省電力スロットリングを徹底防止。
+- フルスクリーン起動による macOS ゲームモード（コントローラー・AirPods の Bluetooth サンプリングレート倍増）を案内。
+
+### 8. 🛡️ パスワード不要の安全な起動診断と残存ファイルクリーンアップ
+- **起動時パスワード要求ゼロ**：起動時は完全読み取り専用の被動診断のみを行い、**管理者のパスワード入力を要求しません**。
+- **過去バージョンの残存ファイル削除**：過去の旧バージョンで残された Helper ファイルを検出・一括クリーンアップ。
+- **アプリアイコン正常表示**：特権サービスを `macgametoolbox.helper` に整理し、システム設定「ログイン項目」でアイコンを正常表示。
+
+### 9. 🌐 3言語リアルタイム切替 (日本語 / 英語 / 簡体中文)
+- **日本語 (ja)**、**English (en)**、**简体中文 (zh-Hans)** を完全サポート。
+- システム言語への自動追従に加え、設定画面からリアルタイムに言語を切り替え可能。
+
+### 10. ⚡ Apple Silicon ARM64 専用ビルド & 単一 Zip 配布
+- x86_64 の冗長コードを排除し、Apple Silicon (M1/M2/M3/M4) 専用の高速・軽量ネイティブビルド。
+- 単一の純粋な `.zip` 形式で配布し、解凍してアプリケーションフォルダに入れるだけで即座に利用可能。
+
+---
+
+## 📋 機能比較表 (Comparison)
+
+| 機能 / 特徴 | 元のバージョン (Upstream) | 本フォーク強化版 (v3.1.0) |
+| :--- | :---: | :---: |
+| **UI アーキテクチャ** | 従来のフローティングウィンドウ / モーダル | 現代的なネイティブサイドバー (`NavigationSplitView`) |
+| **起動時の動作** | 起動時に管理者パスワードを要求する場合あり | **完全パスワード不要の被動診断（特権時のみ認証）** |
+| **Metal HUD 調整** | 全体オン/オフ・簡易起動 | **10-100%スケール、不透明度、四隅配置、23項目（単位例付き）** |
+| **アプリ別設定** | 単一アプリの起動のみ | **ゲーム個別の専用 HUD プロファイル保存・適用** |
+| **性能レポート出力** | 通常のテキストログ出力 | **Markdown 形式の性能診断スナップショット出力** |
+| **競合プロセス診断** | なし | **常駐ランチャー・Wine プロセスの自動検出と安全な再起動** |
+| **セーブデータ管理** | なし | **AppData/SavedGames の自動スキャン・Finder表示・Zip保存** |
+| **スリープ・性能抑制防止** | なし | **Caffeinate ゲーム集中モード（スリープ・消灯・降頻防止）** |
+| **多言語対応** | 中国語 / 簡易英語 | **日本語 / English / 简体中文（リアルタイム切替対応）** |
+| **ビルドと配布形式** | ユニバーサルバイナリ | **Apple Silicon ARM64 専用ネイティブビルド、軽量単一 Zip** |
 
 ---
 
 ## 💻 動作環境
 
-- macOS 14.0 (Sonoma) 以降
-- Apple Silicon Mac (M1 / M2 / M3 / M4 ネイティブ対応)
-- ビルド環境: Swift 6, Xcode 16+, Command Line Tools
+- **OS**：macOS 14.0 (Sonoma) 以降
+- **アーキテクチャ**：Apple Silicon (M1 / M2 / M3 / M4 シリーズ)
+- **ビルド環境**：Xcode 16+, Swift 6, Command Line Tools
 
 ---
 
-## 📦 ビルドとパッケージング
-
-### リリースビルドと Zip パッケージ作成 (ARM64 のみ)
+## 📦 ソースコードからのビルド
 
 ```bash
+# 1. リポジトリをクローン
 git clone https://github.com/Souitou-iop/mac-gaming-toolbox.git
 cd mac-gaming-toolbox
+
+# 2. リリースビルドと Zip パッケージングの実行 (ARM64 のみ)
 ARCHS=arm64 ./Scripts/build-release.sh && ./Scripts/package-zip.sh "build/DerivedData/Build/Products/Release/Mac 游戏工具箱.app" "build/Mac 游戏工具箱-arm64.zip"
 ```
 
+ビルド完了後、単一のインストール用 Zip ファイルが `build/Mac 游戏工具箱-arm64.zip` に生成されます。
+
 ---
 
-## 📄 ライセンスと謝辞
+## 📄 ライセンス
 
-- ライセンス: [GNU General Public License v3.0](LICENSE)
-- オリジナルプロジェクト作者: **我是艾文喵**
-  - 元リポジトリ: [aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox)
-  - チャンネル: [Bilibili](https://b23.tv/dV7YBJQ) · [YouTube](https://youtube.com/channel/UC0TgypOLHt2fXboVw34SKVQ)
+本プロジェクトは **GNU General Public License v3.0 (GPL-3.0)** の下で公開されています。詳細は [LICENSE](LICENSE) をご覧ください。
