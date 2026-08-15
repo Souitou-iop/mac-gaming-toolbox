@@ -870,45 +870,27 @@ public actor SystemHealthInspector {
         var items: [HealthCheckItem] = []
         var legacyFound: [String] = []
 
-        // 1. Privileged Helper Check
+        // 1. Privileged Helper Check (Passive & Read-only, no authorization prompt)
         let helperPath = "/Library/PrivilegedHelperTools/macgametoolbox.helper"
         let plistPath = "/Library/LaunchDaemons/macgametoolbox.helper.plist"
         let helperExists = fileManager.fileExists(atPath: helperPath)
         let plistExists = fileManager.fileExists(atPath: plistPath)
 
-        var helperWorking = false
-        if helperExists && plistExists, let privileged {
-            do {
-                try await privileged.perform(.healthCheck)
-                helperWorking = true
-            } catch {
-                helperWorking = false
-            }
-        }
-
-        if helperWorking {
+        if helperExists && plistExists {
             items.append(HealthCheckItem(
                 nameZh: "特权辅助服务 (Privileged Helper)",
                 nameEn: "Privileged Helper Service",
                 status: .healthy,
-                detailZh: "服务已安装且 XPC 通信正常响应 (macgametoolbox.helper)。",
-                detailEn: "Installed and XPC communication is responding normally (macgametoolbox.helper)."
-            ))
-        } else if helperExists || plistExists {
-            items.append(HealthCheckItem(
-                nameZh: "特权辅助服务 (Privileged Helper)",
-                nameEn: "Privileged Helper Service",
-                status: .warning,
-                detailZh: "辅助程序已安装但 XPC 尚未响应，可能需在系统设置中允许后台活动。",
-                detailEn: "Installed but XPC not responding. May need approval in Login Items & Extensions."
+                detailZh: "辅助服务已安装就绪 (macgametoolbox.helper)。",
+                detailEn: "Helper service is installed and ready (macgametoolbox.helper)."
             ))
         } else {
             items.append(HealthCheckItem(
                 nameZh: "特权辅助服务 (Privileged Helper)",
                 nameEn: "Privileged Helper Service",
                 status: .healthy,
-                detailZh: "服务就绪，首次使用需要提权的功能时将无缝注册。",
-                detailEn: "Ready. Will register seamlessly on first privileged action."
+                detailZh: "未安装（按需使用：首次使用修改 hosts、挂载磁盘或调整优先级等提权功能时再授权，或手动点击下方安装）。",
+                detailEn: "Not installed (On-demand: will prompt on first privileged feature or manual install)."
             ))
         }
 

@@ -128,10 +128,14 @@ public struct SystemSectionView: View {
 
                 // Action Controls
                 HStack(spacing: 12) {
+                    let helperInstalled = FileManager.default.fileExists(atPath: "/Library/PrivilegedHelperTools/macgametoolbox.helper")
                     Button {
                         model.cleanAllLegacyHelpersAndRepair()
                     } label: {
-                        Label(tr("一键体检与自动修复", "Run Full Diagnostic & Auto Repair"), systemImage: "sparkles")
+                        Label(
+                            helperInstalled ? tr("一键重新注册与修复服务", "Re-register & Repair Service") : tr("手动安装特权辅助服务…", "Install Privileged Helper…"),
+                            systemImage: helperInstalled ? "sparkles" : "shield.badge.plus"
+                        )
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.purple)
