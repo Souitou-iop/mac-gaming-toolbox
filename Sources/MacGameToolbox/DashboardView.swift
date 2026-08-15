@@ -223,6 +223,8 @@ struct DashboardView: View {
                         StorageSectionView()
                     case .system:
                         SystemSectionView()
+                    case .about:
+                        AboutSectionView()
                     }
                 }
                 .padding(24)

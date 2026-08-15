@@ -19,15 +19,12 @@ public struct SystemSectionView: View {
             GamingSectionHeader(
                 icon: "gearshape.2.fill",
                 title: tr("系统工具与偏好设置", "System Tools & Preferences"),
-                subtitle: tr("反作弊主机名伪装、壁纸定制、系统诊断与教程", "Anti-cheat environment spoofing, custom wallpaper themes, and diagnostics"),
+                subtitle: tr("反作弊主机名伪装、系统诊断与官方教程", "Anti-cheat environment spoofing, system diagnostics, and tutorials"),
                 accentColor: .purple
             )
 
             // SteamDeck Spoofing Box
             steamDeckSpoofBox
-
-            // Wallpaper Box
-            wallpaperThemeBox
 
             // Utilities & Info Grid
             HStack(spacing: 16) {
@@ -78,47 +75,6 @@ public struct SystemSectionView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                }
-            }
-            .padding(6)
-        }
-    }
-
-    // MARK: - Wallpaper Box
-
-    private var wallpaperThemeBox: some View {
-        GroupBox(label: Label(tr("自定义壁纸", "Wallpaper Customization"), systemImage: "photo.fill.on.rectangle.fill").font(.headline)) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(tr("导入您喜欢的游戏壁纸作为工具箱背景，界面将自动呈现原生毛玻璃拟态渲染。",
-                        "Import custom game wallpapers. The app automatically renders dynamic background vibrancy."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Divider()
-
-                HStack(spacing: 12) {
-                    Button {
-                        model.importWallpaper()
-                    } label: {
-                        Label(
-                            model.configuration.customWallpaperPath == nil ? tr("导入壁纸图片…", "Import Wallpaper…") : tr("更换壁纸…", "Change Wallpaper…"),
-                            systemImage: "square.and.arrow.down.fill"
-                        )
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.regular)
-
-                    if model.configuration.customWallpaperPath != nil {
-                        Button(role: .destructive) {
-                            model.resetWallpaper()
-                        } label: {
-                            Label(tr("恢复默认背景", "Reset to Default"), systemImage: "trash")
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.regular)
-                    }
-
-                    Spacer()
                 }
             }
             .padding(6)

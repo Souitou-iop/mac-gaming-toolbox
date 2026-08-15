@@ -330,6 +330,7 @@ public enum NavigationCategory: String, Codable, CaseIterable, Identifiable, Sen
     case gameBoost
     case storage
     case system
+    case about
 
     public var id: String { rawValue }
 
@@ -339,7 +340,8 @@ public enum NavigationCategory: String, Codable, CaseIterable, Identifiable, Sen
         case .metalHUD: return "Metal HUD 调优"
         case .gameBoost: return "游戏加速与启动"
         case .storage: return "存储与磁盘"
-        case .system: return "系统与设置"
+        case .system: return "系统与偏好"
+        case .about: return "关于与致谢"
         }
     }
 
@@ -350,6 +352,7 @@ public enum NavigationCategory: String, Codable, CaseIterable, Identifiable, Sen
         case .gameBoost: return "Game Boost"
         case .storage: return "Storage & Disks"
         case .system: return "System & Tools"
+        case .about: return "About & Thanks"
         }
     }
 
@@ -360,6 +363,7 @@ public enum NavigationCategory: String, Codable, CaseIterable, Identifiable, Sen
         case .gameBoost: return "bolt.fill"
         case .storage: return "externaldrive.fill"
         case .system: return "gearshape.2.fill"
+        case .about: return "info.circle.fill"
         }
     }
 }

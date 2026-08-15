@@ -43,6 +43,7 @@
 		A10000000000000000000025 /* OverviewSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000015 /* OverviewSectionView.swift */; };
 		A10000000000000000000026 /* SidebarLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000016 /* SidebarLayoutView.swift */; };
 		A10000000000000000000027 /* CommandCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000017 /* CommandCenterView.swift */; };
+		A10000000000000000000028 /* AboutSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000018 /* AboutSectionView.swift */; };
 		B10000000000000000000001 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000001 /* Models.swift */; };
 		B10000000000000000000002 /* CommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000002 /* CommandRunner.swift */; };
 		B10000000000000000000003 /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000003 /* ConfigurationStore.swift */; };
@@ -124,6 +125,7 @@
 		F20000000000000000000015 /* OverviewSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewSectionView.swift; sourceTree = "<group>"; };
 		F20000000000000000000016 /* SidebarLayoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarLayoutView.swift; sourceTree = "<group>"; };
 		F20000000000000000000017 /* CommandCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandCenterView.swift; sourceTree = "<group>"; };
+		F20000000000000000000018 /* AboutSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutSectionView.swift; sourceTree = "<group>"; };
 		F30000000000000000000001 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		F30000000000000000000002 /* com.iven.macgametoolbox.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.iven.macgametoolbox.helper.plist; sourceTree = "<group>"; };
 		F30000000000000000000003 /* App-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "App-Info.plist"; sourceTree = "<group>"; };
@@ -218,6 +220,7 @@
 				F20000000000000000000015 /* OverviewSectionView.swift */,
 				F20000000000000000000016 /* SidebarLayoutView.swift */,
 				F20000000000000000000017 /* CommandCenterView.swift */,
+				F20000000000000000000018 /* AboutSectionView.swift */,
 			);
 			name = MacGameToolbox;
 			path = Sources/MacGameToolbox;
@@ -374,6 +377,7 @@
 				A10000000000000000000025 /* OverviewSectionView.swift in Sources */,
 				A10000000000000000000026 /* SidebarLayoutView.swift in Sources */,
 				A10000000000000000000027 /* CommandCenterView.swift in Sources */,
+				A10000000000000000000028 /* AboutSectionView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

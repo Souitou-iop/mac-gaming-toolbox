@@ -148,6 +148,8 @@ public struct SidebarLayoutView: View {
             StorageSectionView()
         case .system:
             SystemSectionView()
+        case .about:
+            AboutSectionView()
         }
     }
 }
