@@ -49,7 +49,7 @@ public struct SidebarLayoutView: View {
                     .font(.title2.bold())
                     .foregroundStyle(Color.accentColor)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(tr("Mac游戏工具箱", "Mac Gaming"))
+                    Text(tr("Mac游戏工具箱", "Mac Gaming", "Macゲームツール"))
                         .font(.headline)
                     Text("Toolbox v3.1.0")
                         .font(.caption2.monospaced())
@@ -92,7 +92,7 @@ public struct SidebarLayoutView: View {
                     .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                     .frame(width: 22)
 
-                Text(tr(item.titleZh, item.titleEn))
+                Text(tr(item.titleZh, item.titleEn, item.titleJa))
                     .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
                     .foregroundStyle(isSelected ? .primary : .secondary)
 
@@ -121,7 +121,10 @@ public struct SidebarLayoutView: View {
 
     private var bottomStatusSummary: some View {
         HStack(spacing: 8) {
-            LiveStatusBadge(model.metalHUDEnabled ? .active : .standby, title: model.metalHUDEnabled ? "HUD Active" : "Toolbox Ready")
+            LiveStatusBadge(
+                model.metalHUDEnabled ? .active : .standby,
+                title: model.metalHUDEnabled ? tr("HUD 启用中", "HUD Active", "HUD 有効") : tr("工具箱就绪", "Toolbox Ready", "ツールボックス待機中")
+            )
             Spacer()
         }
         .padding(8)

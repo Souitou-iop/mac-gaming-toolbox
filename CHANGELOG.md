@@ -15,6 +15,8 @@ All notable changes to **Mac 游戏工具箱 (Mac Gaming Toolbox)** will be docu
 - **Windows 游戏存档探测与备份 (Save Game Finder & Zip Backup)**：智能扫描 CrossOver、Whisky、Heroic、Wine 容器中的 `AppData/Local`、`Saved Games`、`My Games` 存档目录，支持一键在 Finder 中定位与打包为标准 `.zip` 归档。
 - **原生 Caffeinate 游戏专注模式 (Gaming Focus Anti-Sleep Mode)**：内置原生 caffeinate 守护，游戏与着色器编译期间全程防休眠、防息屏与防降频，提供 Game Mode 蓝牙手柄低延迟优化。
 - **软件服务与权限状态检测器 (Service & Permission Health Inspector)**：实时检测特权辅助服务通信、系统后台活动权限、Metal HUD 环境与磁盘读写权限，支持一键自动修复与历史残留服务清理。
+- **多语言本地化支持 (Multi-Language Localization - ZH / EN / JA)**：完整支持简体中文、English 与日本語，支持跟随系统语言或在通用设置中自由切换，提供专属日文文档 `README_JA.md`。
+- **HoYoGames 启动辅助卡片排版修复 (Layout Bug Fix)**：修复分段选择器压缩导致“等待：”竖向折字排版的视觉缺陷。
 - **辅助服务精简与 App 图标关联 (Helper Streamlining)**：辅助服务标识符精简为 `macgametoolbox.helper`，在 macOS 系统设置「登录项与扩展」中正确显示主 App 原生图标。
 - **纯 ARM64 无损 Zip 发布 (Apple Silicon ARM64 Exclusive & Zip Packaging)**：专为 Apple Silicon M 系列芯片编译优化，发布产物统一采用 `.zip` 格式分发。
 

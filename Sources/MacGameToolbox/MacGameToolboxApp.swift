@@ -7,7 +7,7 @@ struct MacGameToolboxApp: App {
     @StateObject private var model = AppModel()
 
     var body: some Scene {
-        Window(tr("Mac游戏工具箱", "Mac Game Toolbox"), id: "main") {
+        Window(tr("Mac游戏工具箱", "Mac Game Toolbox", "Macゲームツールボックス"), id: "main") {
             DashboardView()
                 .environmentObject(model)
                 .frame(minWidth: 900, minHeight: 650)
@@ -15,12 +15,12 @@ struct MacGameToolboxApp: App {
         .defaultSize(width: 1040, height: 760)
         .commandsReplaced {
             CommandGroup(replacing: .appInfo) {
-                Button(tr("关于 Mac游戏工具箱", "About Mac Game Toolbox")) {
+                Button(tr("关于 Mac游戏工具箱", "About Mac Game Toolbox", "Macゲームツールボックスについて")) {
                     MenuCommandCoordinator.shared.showAboutPanel()
                 }
             }
             CommandGroup(replacing: .appTermination) {
-                Button(tr("退出Mac游戏工具箱", "Quit Mac Game Toolbox")) {
+                Button(tr("退出Mac游戏工具箱", "Quit Mac Game Toolbox", "Macゲームツールボックスを終了")) {
                     MenuCommandCoordinator.shared.quitApplication()
                 }
                 .keyboardShortcut("q")
@@ -28,10 +28,10 @@ struct MacGameToolboxApp: App {
             CommandGroup(replacing: .windowSize) { }
         }
         .commands {
-            CommandMenu(tr("帮助", "Help")) {
-                Button(tr("导出诊断日志", "Export Diagnostics")) { MenuCommandCoordinator.shared.exportDiagnostics() }
-                Button(tr("修复核心功能", "Repair Core Features")) { MenuCommandCoordinator.shared.repairCoreFeatures() }
-                Button(tr("教程总导航", "Tutorials")) { MenuCommandCoordinator.shared.showTutorials() }
+            CommandMenu(tr("帮助", "Help", "ヘルプ")) {
+                Button(tr("导出诊断日志", "Export Diagnostics", "診断ログを出力")) { MenuCommandCoordinator.shared.exportDiagnostics() }
+                Button(tr("修复核心功能", "Repair Core Features", "コア機能を修復")) { MenuCommandCoordinator.shared.repairCoreFeatures() }
+                Button(tr("教程总导航", "Tutorials", "チュートリアル・ガイド")) { MenuCommandCoordinator.shared.showTutorials() }
             }
         }
     }

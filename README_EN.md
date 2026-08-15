@@ -1,6 +1,6 @@
 # Mac Gaming Toolbox
 
-[简体中文](README.md) | [English](README_EN.md)
+[简体中文](README.md) | [English](README_EN.md) | [日本語](README_JA.md)
 
 Mac Gaming Toolbox is a modern macOS gaming enhancement and utility tool built natively with SwiftUI. Version **3.1.0** is optimized exclusively for **Apple Silicon (ARM64)** architecture, fully adhering to Apple's Human Interface Guidelines (HIG) with a native sidebar layout.
 

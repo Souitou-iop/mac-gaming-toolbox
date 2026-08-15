@@ -73,7 +73,10 @@ final class AppModel: ObservableObject {
         didLaunch = true
         DiagnosticFileLogger.write("App launched, version 3.1.0")
         Task {
-            do { configuration = try await configurationStore.load() }
+            do {
+                configuration = try await configurationStore.load()
+                AppLanguage.currentPreference = configuration.languagePreference
+            }
             catch { report(error) }
             metalHUDEnabled = await gamingService.metalHUDEnabled()
             if metalHUDEnabled {
@@ -770,6 +773,13 @@ final class AppModel: ObservableObject {
             DiagnosticFileLogger.write("Added volume UUID to automatic restore record: \(identifier) -> \(volumeUUID)")
         }
         if changed { saveConfiguration() }
+    }
+
+    func setLanguagePreference(_ preference: AppLanguagePreference) {
+        configuration.languagePreference = preference
+        AppLanguage.currentPreference = preference
+        saveConfiguration()
+        objectWillChange.send()
     }
 
     private func saveConfiguration() {

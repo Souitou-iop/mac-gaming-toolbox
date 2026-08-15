@@ -769,7 +769,7 @@ actor MockRunner: CommandRunning {
 }
 
 @Test func healthReportModelsRoundTrip() throws {
-    let item = HealthCheckItem(nameZh: "测试服务", nameEn: "Test Service", status: .healthy, detailZh: "一切正常", detailEn: "All good")
+    let item = HealthCheckItem(nameZh: "测试服务", nameEn: "Test Service", nameJa: "テストサービス", status: .healthy, detailZh: "一切正常", detailEn: "All good", detailJa: "すべて正常")
     let report = SystemHealthReport(items: [item], legacyHelpersFound: [], checkedAt: Date())
     let data = try JSONEncoder().encode(report)
     let decoded = try JSONDecoder().decode(SystemHealthReport.self, from: data)
@@ -777,6 +777,35 @@ actor MockRunner: CommandRunning {
     #expect(decoded.allHealthy)
     #expect(decoded.items.count == 1)
     #expect(decoded.items.first?.nameZh == "测试服务")
+    #expect(decoded.items.first?.nameJa == "テストサービス")
+    #expect(decoded.items.first?.detailJa == "すべて正常")
 }
+
+@Test func languagePreferenceEnumAndConfigurationRoundTrip() async throws {
+    #expect(AppLanguagePreference.allCases.count == 4)
+    #expect(AppLanguagePreference.system.rawValue == "system")
+    #expect(AppLanguagePreference.chinese.rawValue == "zh-Hans")
+    #expect(AppLanguagePreference.english.rawValue == "en")
+    #expect(AppLanguagePreference.japanese.rawValue == "ja")
+
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let store = ConfigurationStore(configurationURL: root.appendingPathComponent("configuration.json"))
+    var config = AppConfiguration()
+    config.languagePreference = .japanese
+    try await store.save(config)
+
+    let loaded = try await store.load(homeURL: root)
+    #expect(loaded.languagePreference == .japanese)
+}
+
+@Test func navigationCategoryProvidesJapaneseTitles() {
+    #expect(NavigationCategory.overview.titleJa == "概要とステータス")
+    #expect(NavigationCategory.metalHUD.titleJa == "Metal HUD 設定")
+    #expect(NavigationCategory.gameBoost.titleJa == "ゲーム高速化・起動")
+    #expect(NavigationCategory.storage.titleJa == "ストレージとセーブ")
+    #expect(NavigationCategory.system.titleJa == "システムと設定")
+    #expect(NavigationCategory.about.titleJa == "情報と謝辞")
+}
+
 
 

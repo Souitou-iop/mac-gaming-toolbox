@@ -40,10 +40,10 @@ public struct LiveStatusBadge: View {
 
         var defaultTitle: String {
             switch self {
-            case .active: return tr("运行中", "Active")
-            case .standby: return tr("就绪", "Ready")
-            case .warning: return tr("注意", "Warning")
-            case .idle: return tr("未启用", "Inactive")
+            case .active: return tr("运行中", "Active", "実行中")
+            case .standby: return tr("就绪", "Ready", "待機中")
+            case .warning: return tr("注意", "Warning", "警告")
+            case .idle: return tr("未启用", "Inactive", "未有効化")
             case .custom(_, let t): return t
             }
         }

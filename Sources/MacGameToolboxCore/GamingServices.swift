@@ -880,17 +880,21 @@ public actor SystemHealthInspector {
             items.append(HealthCheckItem(
                 nameZh: "特权辅助服务 (Privileged Helper)",
                 nameEn: "Privileged Helper Service",
+                nameJa: "特権ヘルパーサービス",
                 status: .healthy,
                 detailZh: "辅助服务已安装就绪 (macgametoolbox.helper)。",
-                detailEn: "Helper service is installed and ready (macgametoolbox.helper)."
+                detailEn: "Helper service is installed and ready (macgametoolbox.helper).",
+                detailJa: "ヘルパーサービスが正常にインストールされています (macgametoolbox.helper)。"
             ))
         } else {
             items.append(HealthCheckItem(
                 nameZh: "特权辅助服务 (Privileged Helper)",
                 nameEn: "Privileged Helper Service",
+                nameJa: "特権ヘルパーサービス",
                 status: .healthy,
                 detailZh: "未安装（按需使用：首次使用修改 hosts、挂载磁盘或调整优先级等提权功能时再授权，或手动点击下方安装）。",
-                detailEn: "Not installed (On-demand: will prompt on first privileged feature or manual install)."
+                detailEn: "Not installed (On-demand: will prompt on first privileged feature or manual install).",
+                detailJa: "未インストール（オンデマンド：特権機能の初回実行時または手動ボタンでインストールできます）。"
             ))
         }
 
@@ -910,9 +914,11 @@ public actor SystemHealthInspector {
         items.append(HealthCheckItem(
             nameZh: "Metal HUD 注入环境",
             nameEn: "Metal HUD Hook Environment",
+            nameJa: "Metal HUD 環境変数",
             status: .healthy,
             detailZh: hudActive ? "全局 HUD 变量已注入 (MTL_HUD_ENABLED=1)。" : "全局 HUD 变量就绪（当前处于关闭状态）。",
-            detailEn: hudActive ? "Global HUD variable active (MTL_HUD_ENABLED=1)." : "Global HUD variable ready (currently off)."
+            detailEn: hudActive ? "Global HUD variable active (MTL_HUD_ENABLED=1)." : "Global HUD variable ready (currently off).",
+            detailJa: hudActive ? "グローバル HUD 変数が有効化されています (MTL_HUD_ENABLED=1)。" : "HUD 環境変数は待機状態です（現在は無効）。"
         ))
 
         // 4. Storage & Cache Access Check

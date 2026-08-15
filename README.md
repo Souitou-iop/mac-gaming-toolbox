@@ -1,6 +1,6 @@
 # Mac 游戏工具箱 (Mac Gaming Toolbox)
 
-[简体中文](README.md) | [English](README_EN.md)
+[简体中文](README.md) | [English](README_EN.md) | [日本語](README_JA.md)
 
 Mac 游戏工具箱是一款基于原生 SwiftUI 打造的现代化 macOS 游戏辅助与优化工具。当前版本为 **3.1.0**，专为 **Apple Silicon (ARM64)** 架构深度定制与优化，界面完全遵循 Apple HIG 人机交互指南，提供侧边栏多功能聚合体验。
 

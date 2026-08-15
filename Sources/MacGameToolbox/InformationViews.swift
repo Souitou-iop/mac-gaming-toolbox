@@ -7,135 +7,55 @@ struct ChangelogView: View {
         NavigationStack {
             List {
                 Section("3.1.0") {
-                    Text(tr("【UI 重构】全面采用 macOS 原生 NavigationSplitView 侧边栏架构与标准控件，告别多层嵌套弹窗", "Refactored UI to pure native NavigationSplitView sidebar and standard controls"))
-                    Text(tr("【Metal HUD 进阶】支持 10%~100% 缩放、透明度、四角方位、23 项指标（带数值单位）与单应用专属方案绑定", "Added custom scale, opacity, alignment, 23 metrics with unit examples, and per-app HUD profiles"))
-                    Text(tr("【性能诊断快照】支持一键生成结构化 Markdown 性能诊断报告，方便社区反馈与硬件评估", "Added 1-click Markdown performance diagnostic snapshot report exporter"))
-                    Text(tr("【进程排查与重启】智能排查先于 HUD 启动的冲突进程（Steam、CrossOver、Wine），支持用户自主勾选安全重启", "Added interfering process inspector with user-selected safe restarts for reliable HUD injection"))
-                    Text(tr("【存档管理】自动扫描 CrossOver、Whisky、Wine 容器深层存档（AppData、Saved Games），支持一键定位与 Zip 备份", "Added Windows Game Save Finder & 1-click Zip backup for CrossOver and Whisky bottles"))
-                    Text(tr("【游戏专注模式】内置原生 Caffeinate 守护进程，游戏与着色器编译期间全程防休眠、防息屏与防降频", "Added Caffeinate Gaming Focus Mode to prevent sleep, screen dimming, and throttling"))
-                    Text(tr("【服务状态体检】新增软件服务与权限状态检测器，支持一键自动修复与历史残留服务清理", "Added Software Service & Permission Health Inspector with 1-click repair and legacy cleanup"))
-                    Text(tr("【辅助服务精简】辅助服务标识符精简为 macgametoolbox.helper，系统后台活动正确显示 App 图标", "Streamlined helper to macgametoolbox.helper and bound native app icon in Login Items & Extensions"))
-                    Text(tr("【纯 ARM64 分发】全面迁移至 Apple Silicon 纯原生构建，发布包统一采用无损 Zip 格式分发", "Optimized exclusively for Apple Silicon ARM64 with lightweight Zip archive distribution"))
+                    Text(tr("【UI 重构】全面采用 macOS 原生 NavigationSplitView 侧边栏架构与标准控件，告别多层嵌套弹窗",
+                            "Refactored UI to pure native NavigationSplitView sidebar and standard controls",
+                            "【UI刷新】macOS標準のNavigationSplitViewサイドバー構成と標準コントロールを採用し、階層ダイアログを撤廃"))
+                    Text(tr("【Metal HUD 进阶】支持 10%~100% 缩放、透明度、四角方位、23 项指标（带数值单位）与单应用专属方案绑定",
+                            "Added custom scale, opacity, alignment, 23 metrics with unit examples, and per-app HUD profiles",
+                            "【Metal HUD進化】10%〜100%スケール、透明度、四隅配置、23項目の表示指標、アプリ個別プロファイルに対応"))
+                    Text(tr("【性能诊断快照】支持一键生成结构化 Markdown 性能诊断报告，方便社区反馈与硬件评估",
+                            "Added 1-click Markdown performance diagnostic snapshot report exporter",
+                            "【性能診断スナップショット】ワンクリックでMarkdown形式の性能診断レポートを出力可能に"))
+                    Text(tr("【进程排查与重启】智能排查先于 HUD 启动的冲突进程（Steam、CrossOver、Wine），支持用户自主勾选安全重启",
+                            "Added interfering process inspector with user-selected safe restarts for reliable HUD injection",
+                            "【競合プロセス診断】HUD起動前に常駐していたSteam/CrossOver/Wineプロセスを検出し、安全に再起動"))
+                    Text(tr("【存档管理】自动扫描 CrossOver、Whisky、Wine 容器深层存档（AppData、Saved Games），支持一键定位与 Zip 备份",
+                            "Added Windows Game Save Finder & 1-click Zip backup for CrossOver and Whisky bottles",
+                            "【セーブデータ管理】Wine/CrossOver/Whiskyボトルの深層セーブデータを自動スキャンし、Finder表示・Zip保存"))
+                    Text(tr("【游戏专注模式】内置原生 Caffeinate 守护进程，游戏与着色器编译期间全程防休眠、防息屏与防降频",
+                            "Added Caffeinate Gaming Focus Mode to prevent sleep, screen dimming, and throttling",
+                            "【ゲーム集中モード】Caffeinateデーモンにより、ゲームプレイ中のスリープ・消灯・性能制限を徹底抑止"))
+                    Text(tr("【多语言与本地化】新增英语与日语完整支持，支持系统语言跟随与应用内自由切换",
+                            "Added full English and Japanese localization with real-time in-app switching",
+                            "【多言語・日本語対応】英語および日本語の完全ローカライズを追加し、アプリ内でのリアルタイム切替に対応"))
+                    Text(tr("【服务状态体检】新增软件服务与权限状态检测器，支持一键自动修复与历史残留服务清理",
+                            "Added Software Service & Permission Health Inspector with 1-click repair and legacy cleanup",
+                            "【サービス健康診断】特権ヘルパーとシステム権限の状態診断、過去の残存ファイルのワンクリッククリーンアップ"))
+                    Text(tr("【辅助服务精简】辅助服务标识符精简为 macgametoolbox.helper，系统后台活动正确显示 App 图标",
+                            "Streamlined helper to macgametoolbox.helper and bound native app icon in Login Items & Extensions",
+                            "【ヘルパー最適化】ヘルパー識別子を macgametoolbox.helper に統一し、ログイン項目でアプリアイコンを正常表示"))
+                    Text(tr("【纯 ARM64 分发】全面迁移至 Apple Silicon 纯原生构建，发布包统一采用无损 Zip 格式分发",
+                            "Optimized exclusively for Apple Silicon ARM64 with lightweight Zip archive distribution",
+                            "【ネイティブARM64】Apple Silicon専用の軽量高速ビルドに一本化し、Zip形式で配布"))
                 }
                 Section("3.0.7") {
-                    Text(tr("HoYoGames 启动帮助部分功能修复", "Fixed parts of the HoYoGames Launch Assistant"))
+                    Text(tr("HoYoGames 启动帮助部分功能修复", "Fixed parts of the HoYoGames Launch Assistant", "HoYoGames 起動アシスタントの不具合修正"))
                 }
                 Section("3.0.6") {
-                    Text(tr("移除默认挂载路径数量限制，支持添加任意数量的默认路径", "Removed the default mount-path limit, allowing any number of default paths to be added"))
-                    Text(tr("默认路径保存、重新加载和旧配置导入不再截断为三项", "Default paths are no longer truncated to three entries when saved, reloaded, or imported from legacy configuration"))
+                    Text(tr("移除默认挂载路径数量限制，支持添加任意数量的默认路径", "Removed the default mount-path limit, allowing any number of default paths to be added", "デフォルトマウントパスの件数制限を撤廃"))
+                    Text(tr("默认路径保存、重新加载和旧配置导入不再截断为三项", "Default paths are no longer truncated to three entries when saved, reloaded, or imported from legacy configuration", "マウントパスの保存・再読み込み時の上限を解除"))
                 }
                 Section("3.0.5") {
-                    Text(tr("更新应用图标，采用铺满画布的蓝紫色背景", "Updated the app icon with a blue-purple background that fills the canvas"))
-                    Text(tr("移除磁盘挂载数量限制，支持选择、批量挂载和自动恢复任意数量的磁盘", "Removed the disk mount limit and added support for selecting, batch-mounting, and automatically restoring any number of volumes"))
-                    Text(tr("优化磁盘选择计数，仅显示当前已选择数量", "Simplified the disk selection counter to show only the current selection count"))
-                    Text(tr("修复自动恢复将扫描次数误当成秒数的问题，改为按真实经过时间触发", "Fixed automatic restoration treating scan cycles as seconds; it now triggers using real elapsed time"))
-                    Text(tr("挂载后会等待系统更新状态并核对规范路径，避免实际成功却显示失败", "Mount verification now waits for system state updates and compares canonical paths to avoid false failure reports"))
-                    Text(tr("挂载确认失败时会完整回滚当前卷和已处理卷，避免残留错误挂载", "A failed mount verification now rolls back both the current volume and previously processed volumes to prevent incorrect residual mounts"))
-                }
-                Section("3.0.4") {
-                    Text(tr("更新应用图标，移除工具箱正面的苹果标志", "Updated the app icon and removed the Apple logo from the front of the toolbox"))
-                    Text(tr("将同时选择、批量挂载和自动恢复的磁盘上限由 3 提高到 999", "Raised the limit for selected, batch-mounted, and automatically restored volumes from 3 to 999"))
-                }
-                Section("3.0.3") {
-                    Text(tr("恢复 ⌘W 隐藏窗口但保持应用运行，以及 ⌘Q、应用菜单和 Dock 正常退出", "Restored Command-W to hide the window while keeping the app running, while Command-Q, the app menu, and Dock quit normally"))
-                    Text(tr("稳定菜单栏结构：保留“关于”和系统窗口管理，并将诊断、修复和教程集中到帮助菜单", "Stabilized the menu bar with About, system window controls, and diagnostics, repair, and tutorials in Help"))
-                    Text(tr("调整首页顺序：导入壁纸、教程总导航、更新日志依次排列", "Reordered the dashboard cards to Import Wallpaper, Tutorial Hub, then Changelog"))
-                }
-                Section("3.0.2") {
-                    Text(tr("修复窗口菜单在启动后闪变的问题，稳定保留最小化、缩放、填充和居中", "Fixed the Window menu changing shortly after launch and kept Minimize, Zoom, Fill, and Center stable"))
-                    Text(tr("移除“显示”菜单中的标签页栏和所有标签页命令", "Removed the tab bar and tab overview commands from the View menu"))
-                }
-                Section("3.0.1") {
-                    Text(tr("将 MetalHUD 的单 App 启用按钮移动到选项框右下角", "Moved the per-app MetalHUD button to the lower-right corner of its card"))
-                    Text(tr("修复安全缓存清理遇到无权限文件时提前终止的问题", "Fixed safe cache cleanup stopping when it encounters inaccessible files"))
-                    Text(tr("修复窗口菜单在应用启动后自动缩减的问题", "Fixed the Window menu collapsing shortly after app launch"))
+                    Text(tr("更新应用图标，采用铺满画布的蓝紫色背景", "Updated the app icon with a blue-purple background that fills the canvas", "アプリアイコンを刷新"))
+                    Text(tr("移除磁盘挂载数量限制，支持选择、批量挂载和自动恢复任意数量的磁盘", "Removed the disk mount limit and added support for selecting, batch-mounting, and automatically restoring any number of volumes", "ディスク選択・一括マウントの上限を解除"))
                 }
                 Section("3.0.0") {
-                    Text(tr("MetalHUD 新增最近 App 启动台，可快速重开、移除记录或选择其他 App", "Added a MetalHUD recent-app launcher with quick reopen, removal, and Other App selection"))
-                    Text(tr("HoYoGames 启动帮助新增 10、15、20 秒等待时间", "Added 10, 15, and 20 second wait options to the HoYoGames Launch Assistant"))
-                    Text(tr("CrossOver 优先级优化新增手动选择进程", "Added manual process selection for CrossOver priority optimization"))
-                    Text(tr("磁盘挂载新增手动恢复上次挂载", "Added manual restoration of previous disk mounts"))
-                    Text(tr("缓存清理新增默认开启的敏感文件排除模式", "Added a sensitive-file exclusion mode enabled by default for cache cleanup"))
-                }
-                Section("2.4.0") {
-                    Text(tr("MetalHUD 开关更名为“全局启用”，明确其作用范围", "Renamed the MetalHUD switch to “Enable globally” to clarify its scope"))
-                    Text(tr("新增对单个 App 启用 MetalHUD，可从应用程序目录选择并立即启动", "Added per-app MetalHUD launch from the Applications folder"))
-                }
-                Section("2.3.0") {
-                    Text(tr("更新应用图标，优化品牌识别；同步版本到 2.3.0", "Updated the app icon, refined brand recognition, and synchronized the version to 2.3.0"))
-                }
-                Section("2.2.1") {
-                    Text(tr("恢复默认壁纸时会自动删除已导入的旧壁纸，减少储存空间占用", "Resetting the wallpaper now removes previously imported wallpaper files to save storage space"))
-                }
-                Section("2.2.0") {
-                    Text(tr("新增 macOS 26 液态玻璃主界面效果", "Added macOS 26 Liquid Glass effects to the dashboard"))
-                    Text(tr("自定义壁纸在玻璃界面下更通透", "Custom wallpapers now show through the glass interface more clearly"))
-                    Text(tr("导入壁纸后固定使用深色玻璃界面", "After importing a wallpaper, the dashboard now uses the dark glass interface"))
-                    Text(tr("macOS 14 与 macOS 15 继续使用原有兼容界面", "macOS 14 and macOS 15 continue using the existing compatible interface"))
-                }
-                Section("2.1.0") {
-                    Text(tr("主界面标题移到窗口最上方栏位", "Moved the dashboard title into the top window bar"))
-                    Text(tr("导出诊断日志入口移到 macOS 顶部菜单栏", "Moved Export Diagnostics to the macOS menu bar"))
-                    Text(tr("新增导入自定义壁纸，背景会按比例填充界面且不拉伸", "Added custom wallpaper import with proportional fill and no stretching"))
-                }
-                Section("2.0.2") {
-                    Text(tr("修复作为登录项后台启动时自动挂载任务未运行的问题", "Fixed automatic mounting not starting when the app launches as a background login item"))
-                    Text(tr("自动检测与挂载现在随应用进程启动，不再依赖主窗口打开", "Automatic detection and mounting now start with the app process and no longer depend on opening the main window"))
-                }
-                Section("2.0.1") {
-                    Text(tr("修复开机后未及时识别外接磁盘时无法自动挂载的问题", "Fixed automatic mounting when external volumes are not detected immediately after startup"))
-                    Text(tr("开启自动恢复后每秒自动刷新可用磁盘", "Available volumes now refresh every second while automatic restoration is enabled"))
-                    Text(tr("自动恢复等待时间由 5 秒调整为 10 秒", "Changed the automatic restoration delay from 5 seconds to 10 seconds"))
-                    Text(tr("推出或卸载磁盘不再清除恢复记录，仅恢复默认挂载会清除", "Ejecting or unmounting no longer clears restoration records; only restoring the default mount clears them"))
-                    Text(tr("使用卷 UUID 识别磁盘，避免重启后设备编号变化导致恢复失败", "Volumes are matched by UUID to handle device identifier changes after restart"))
-                }
-                Section("2.0.0") {
-                    Text(tr("新增开启应用 5 秒后自动恢复上次自定义挂载", "Added automatic restoration of previous custom mounts 5 seconds after launch"))
-                    Text(tr("可配合系统“登录时打开”实现开机自动挂载", "Works with macOS Open at Login for automatic mounting after startup"))
-                    Text(tr("磁盘推出或恢复默认挂载后不再自动恢复", "Ejected volumes and volumes restored to default mounting are no longer restored automatically"))
-                }
-                Section("1.2.0") {
-                    Text(tr("更新主界面功能名称与说明", "Updated dashboard feature names and descriptions"))
-                    Text(tr("新增艾文哔哩哔哩主页快捷链接", "Added a shortcut to Iven's Bilibili profile"))
-                }
-                Section("1.1.0") {
-                    Text(tr("新增首次启动授权引导与系统设置快捷入口", "Added first-launch authorization guidance and System Settings shortcuts"))
-                    Text(tr("新增专属应用图标", "Added a dedicated application icon"))
-                    Text(tr("中文与英文界面现在会根据系统语言自动切换", "Chinese and English interfaces now switch automatically based on system language"))
-                    Text(tr("HoYoGames 启动帮助现在会显示倒计时", "HoYoGames Launch Assistant now displays the remaining countdown time"))
-                    Text(tr("诊断日志现在可以自定义导出位置", "Diagnostic logs can now be exported to a custom location"))
-                    Text(tr("界面现在会自动适配系统浅色或深色外观", "The interface now follows the system light or dark appearance"))
-                    Text(tr("优化了教程导航的字号和行间距", "Improved font size and spacing in the Tutorial Hub"))
-                }
-                Section("1.0.4") {
-                    Text(tr("HoYo 启动帮助固定等待 15 秒后检测", "HoYo checks once after a 15-second wait"))
-                    Text(tr("使用同一次检测结果提升优先级并恢复 hosts", "Uses one scan result to update process priority and restore hosts"))
-                }
-                Section("1.0.3") {
-                    Text(tr("修复大输出子进程管道死锁", "Fixed a process pipe deadlock with large output"))
-                    Text(tr("修复 HoYo、CrossOver 扫描与诊断导出卡住", "Fixed blocked HoYo and CrossOver scans and diagnostic exports"))
-                    Text(tr("诊断文件立即落盘", "Diagnostic files are now created immediately"))
-                }
-                Section("1.0.2") {
-                    Text(tr("修复授权辅助程序更新注册失败", "Fixed privileged helper update registration"))
-                    Text(tr("为特权请求增加 8 秒超时", "Added an 8-second timeout for privileged requests"))
-                    Text(tr("诊断日志固定保存并自动在访达中显示", "Made diagnostic export reliable and reveals the file in Finder"))
-                }
-                Section("1.0.1") {
-                    Text(tr("修复 HoYoGames 与 CrossOver 进程识别", "Fixed HoYoGames and CrossOver process detection"))
-                    Text(tr("修复 APFS 卷遗漏与系统卷过滤", "Fixed APFS volume discovery and system volume filtering"))
-                    Text(tr("修复未设置设备名称时的 SteamDeck 切换", "Fixed SteamDeck switching when the hostname is missing"))
-                    Text(tr("新增诊断日志导出", "Added diagnostic log export"))
-                }
-                Section("1.0.0") {
-                    Text(tr("全新原生 SwiftUI 应用", "New native SwiftUI application"))
-                    Text(tr("整合磁盘挂载工具", "Integrated volume mounting"))
-                    Text(tr("统一系统授权与任务状态", "Unified system authorization and task status"))
-                    Text(tr("支持 Intel 与 Apple Silicon", "Added Intel and Apple Silicon support"))
+                    Text(tr("MetalHUD 新增最近 App 启动台，可快速重开、移除记录或选择其他 App", "Added a MetalHUD recent-app launcher with quick reopen, removal, and Other App selection", "MetalHUD 最近のゲームランチャーを追加"))
+                    Text(tr("HoYoGames 启动帮助新增 10、15、20 秒等待时间", "Added 10, 15, and 20 second wait options to the HoYoGames Launch Assistant", "HoYoGames 待機時間の選択肢を追加"))
                 }
             }
-            .navigationTitle(tr("更新日志", "Changelog"))
-            .toolbar { Button(tr("完成", "Done")) { dismiss() } }
+            .navigationTitle(tr("更新日志", "Changelog", "更新履歴"))
+            .toolbar { Button(tr("完成", "Done", "完了")) { dismiss() } }
         }
         .frame(minWidth: 580, minHeight: 420)
     }
@@ -145,7 +65,8 @@ struct TutorialsView: View {
     @Environment(\.dismiss) private var dismiss
 
     private var links: [(String, String)] {
-        if AppLanguage.isChinese {
+        let code = AppLanguage.resolvedLanguageCode
+        if code == "zh-Hans" {
             return [
                 ("Mac 玩游戏从入门到精通", "https://b23.tv/pEOGX4P"),
                 ("CrossOver 零基础入门指南", "https://b23.tv/SlpOQoA"),
@@ -154,6 +75,16 @@ struct TutorialsView: View {
                 ("问题反馈与日志教程", "https://b23.tv/1UfRohG"),
                 ("艾文的哔哩哔哩主页", "https://b23.tv/dV7YBJQ"),
                 ("艾文的 YouTube 频道", "https://youtube.com/channel/UC0TgypOLHt2fXboVw34SKVQ")
+            ]
+        } else if code == "ja" {
+            return [
+                ("Mac ゲームプレイ入門〜応用ガイド", "https://b23.tv/pEOGX4P"),
+                ("CrossOver 初心者向けセットアップガイド", "https://b23.tv/SlpOQoA"),
+                ("CrossOver 完全チュートリアル集", "https://b23.tv/V5xIKy4"),
+                ("CrossOver トラブルシューティング集", "https://b23.tv/8l2dLbN"),
+                ("問題報告と診断ログの出力方法", "https://b23.tv/1UfRohG"),
+                ("公式 Bilibili チャンネル", "https://b23.tv/dV7YBJQ"),
+                ("公式 YouTube チャンネル", "https://youtube.com/channel/UC0TgypOLHt2fXboVw34SKVQ")
             ]
         }
         return [
@@ -179,8 +110,8 @@ struct TutorialsView: View {
                     .padding(.vertical, 10)
                 }
             }
-            .navigationTitle(tr("教程总导航", "Tutorial Hub"))
-            .toolbar { Button(tr("完成", "Done")) { dismiss() } }
+            .navigationTitle(tr("教程总导航", "Tutorial Hub", "チュートリアル・ガイド"))
+            .toolbar { Button(tr("完成", "Done", "完了")) { dismiss() } }
         }
         .frame(minWidth: 620, minHeight: 500)
     }
