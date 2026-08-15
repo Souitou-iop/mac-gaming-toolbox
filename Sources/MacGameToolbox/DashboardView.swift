@@ -24,24 +24,33 @@ struct DashboardView: View {
                 .transaction { transaction in
                     transaction.animation = nil
                 }
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    LazyVGrid(columns: columns, spacing: 18) {
-                        featureCards
+
+            VStack(spacing: 0) {
+                // Top Global Bar
+                topToolbarBar
+
+                // Dynamic Body based on navigationLayoutMode
+                ZStack(alignment: .bottom) {
+                    Group {
+                        if model.configuration.navigationLayoutMode == .sidebar {
+                            SidebarLayoutView()
+                        } else {
+                            CommandCenterView()
+                        }
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .animation(.easeInOut(duration: 0.25), value: model.configuration.navigationLayoutMode)
+
+                    // Bottom floating status panel when active
+                    statusPanel
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 22)
+                        .compositingGroup()
+                        .opacity(isStatusPanelVisible ? 1 : 0)
+                        .allowsHitTesting(isStatusPanelVisible)
+                        .accessibilityHidden(!isStatusPanelVisible)
                 }
-                .padding(.horizontal, 28)
-                .padding(.top, 28)
-                .padding(.bottom, model.status.phase == .idle ? 28 : 86)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            statusPanel
-                .padding(.horizontal, 28)
-                .padding(.bottom, 22)
-                .compositingGroup()
-                .opacity(isStatusPanelVisible ? 1 : 0)
-                .allowsHitTesting(isStatusPanelVisible)
-                .accessibilityHidden(!isStatusPanelVisible)
         }
         .background(WindowAppearanceConfigurator(nativeGlassEnabled: $nativeGlassEnabled, colorScheme: effectiveColorScheme, isEnabled: useLiquidGlassUI))
         .sheet(isPresented: $model.showingDiskManager) { DiskManagerView().environmentObject(model) }
@@ -206,6 +215,44 @@ struct DashboardView: View {
         }
     }
 
+    private var topToolbarBar: some View {
+        HStack(spacing: 12) {
+            if model.configuration.navigationLayoutMode == .commandCenter {
+                HStack(spacing: 8) {
+                    Image(systemName: "gamecontroller.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(GamingTheme.gradientCyanEmerald)
+                    Text(tr("Mac游戏工具箱", "Mac Gaming Toolbox"))
+                        .font(.system(size: 13, weight: .bold))
+                }
+            }
+
+            Spacer()
+
+            Picker("", selection: Binding(
+                get: { model.configuration.navigationLayoutMode },
+                set: { model.setNavigationLayoutMode($0) }
+            )) {
+                ForEach(NavigationLayoutMode.allCases, id: \.self) { mode in
+                    Label(tr(mode.titleZh, mode.titleEn), systemImage: mode.iconName).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 220)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
+        .background(
+            Color.black.opacity(0.2)
+        )
+        .overlay(
+            Rectangle()
+                .fill(Color.white.opacity(0.06))
+                .frame(height: 0.5),
+            alignment: .bottom
+        )
+    }
+
     private var statusIcon: String {
         switch displayedStatus.phase {
         case .succeeded: "checkmark.circle.fill"
@@ -218,7 +265,7 @@ struct DashboardView: View {
 
     private var backgroundColors: [Color] {
         effectiveColorScheme == .dark
-            ? [Color(red: 0.035, green: 0.045, blue: 0.07), Color(red: 0.08, green: 0.055, blue: 0.13)]
+            ? [GamingTheme.bgDeepDark, GamingTheme.bgSurfaceDark]
             : [Color(red: 0.94, green: 0.96, blue: 1.0), Color(red: 0.98, green: 0.94, blue: 1.0)]
     }
 

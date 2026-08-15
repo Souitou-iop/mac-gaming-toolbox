@@ -35,6 +35,14 @@
 		A1000000000000000000001A /* com.iven.macgametoolbox.helper.v7.plist in Embed LaunchDaemon Plist */ = {isa = PBXBuildFile; fileRef = F30000000000000000000008 /* com.iven.macgametoolbox.helper.v7.plist */; };
 		A1000000000000000000001B /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F50000000000000000000002 /* Security.framework */; };
 		A1000000000000000000001C /* WallpaperService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000009 /* WallpaperService.swift */; };
+		A10000000000000000000020 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000010 /* DesignSystem.swift */; };
+		A10000000000000000000021 /* MetalHUDSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000011 /* MetalHUDSectionView.swift */; };
+		A10000000000000000000022 /* GameBoostSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000012 /* GameBoostSectionView.swift */; };
+		A10000000000000000000023 /* StorageSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000013 /* StorageSectionView.swift */; };
+		A10000000000000000000024 /* SystemSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000014 /* SystemSectionView.swift */; };
+		A10000000000000000000025 /* OverviewSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000015 /* OverviewSectionView.swift */; };
+		A10000000000000000000026 /* SidebarLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000016 /* SidebarLayoutView.swift */; };
+		A10000000000000000000027 /* CommandCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000017 /* CommandCenterView.swift */; };
 		B10000000000000000000001 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000001 /* Models.swift */; };
 		B10000000000000000000002 /* CommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000002 /* CommandRunner.swift */; };
 		B10000000000000000000003 /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000003 /* ConfigurationStore.swift */; };
@@ -108,6 +116,14 @@
 		F20000000000000000000008 /* DiagnosticFileLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticFileLogger.swift; sourceTree = "<group>"; };
 		F20000000000000000000009 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		F2000000000000000000000A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F20000000000000000000010 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		F20000000000000000000011 /* MetalHUDSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalHUDSectionView.swift; sourceTree = "<group>"; };
+		F20000000000000000000012 /* GameBoostSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameBoostSectionView.swift; sourceTree = "<group>"; };
+		F20000000000000000000013 /* StorageSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageSectionView.swift; sourceTree = "<group>"; };
+		F20000000000000000000014 /* SystemSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSectionView.swift; sourceTree = "<group>"; };
+		F20000000000000000000015 /* OverviewSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewSectionView.swift; sourceTree = "<group>"; };
+		F20000000000000000000016 /* SidebarLayoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarLayoutView.swift; sourceTree = "<group>"; };
+		F20000000000000000000017 /* CommandCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandCenterView.swift; sourceTree = "<group>"; };
 		F30000000000000000000001 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		F30000000000000000000002 /* com.iven.macgametoolbox.helper.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.iven.macgametoolbox.helper.plist; sourceTree = "<group>"; };
 		F30000000000000000000003 /* App-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "App-Info.plist"; sourceTree = "<group>"; };
@@ -194,6 +210,14 @@
 				F20000000000000000000008 /* DiagnosticFileLogger.swift */,
 				F20000000000000000000009 /* Localization.swift */,
 				F2000000000000000000000A /* Assets.xcassets */,
+				F20000000000000000000010 /* DesignSystem.swift */,
+				F20000000000000000000011 /* MetalHUDSectionView.swift */,
+				F20000000000000000000012 /* GameBoostSectionView.swift */,
+				F20000000000000000000013 /* StorageSectionView.swift */,
+				F20000000000000000000014 /* SystemSectionView.swift */,
+				F20000000000000000000015 /* OverviewSectionView.swift */,
+				F20000000000000000000016 /* SidebarLayoutView.swift */,
+				F20000000000000000000017 /* CommandCenterView.swift */,
 			);
 			name = MacGameToolbox;
 			path = Sources/MacGameToolbox;
@@ -342,6 +366,14 @@
 				A10000000000000000000012 /* DiagnosticsService.swift in Sources */,
 				A10000000000000000000014 /* DiagnosticFileLogger.swift in Sources */,
 				A10000000000000000000016 /* Localization.swift in Sources */,
+				A10000000000000000000020 /* DesignSystem.swift in Sources */,
+				A10000000000000000000021 /* MetalHUDSectionView.swift in Sources */,
+				A10000000000000000000022 /* GameBoostSectionView.swift in Sources */,
+				A10000000000000000000023 /* StorageSectionView.swift in Sources */,
+				A10000000000000000000024 /* SystemSectionView.swift in Sources */,
+				A10000000000000000000025 /* OverviewSectionView.swift in Sources */,
+				A10000000000000000000026 /* SidebarLayoutView.swift in Sources */,
+				A10000000000000000000027 /* CommandCenterView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

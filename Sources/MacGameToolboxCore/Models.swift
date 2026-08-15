@@ -324,6 +324,32 @@ public struct MetalHUDOptions: Codable, Equatable, Sendable {
     }
 }
 
+public enum NavigationLayoutMode: String, Codable, CaseIterable, Sendable {
+    case sidebar
+    case commandCenter
+
+    public var titleZh: String {
+        switch self {
+        case .sidebar: return "侧边栏模式"
+        case .commandCenter: return "控制台模式"
+        }
+    }
+
+    public var titleEn: String {
+        switch self {
+        case .sidebar: return "Sidebar View"
+        case .commandCenter: return "Command Center"
+        }
+    }
+
+    public var iconName: String {
+        switch self {
+        case .sidebar: return "sidebar.left"
+        case .commandCenter: return "rectangle.grid.2x2.fill"
+        }
+    }
+}
+
 public struct AppConfiguration: Codable, Equatable, Sendable {
     public var schemaVersion = 3
     public var didImportLegacyConfiguration = false
@@ -337,13 +363,14 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
     public var hoYoWaitSeconds = 15
     public var excludesSensitiveCacheFiles = true
     public var metalHUDOptions = MetalHUDOptions()
+    public var navigationLayoutMode: NavigationLayoutMode = .sidebar
 
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, didImportLegacyConfiguration, defaultPaths, diskPresets
         case automaticallyRestoreMountsOnLaunch, restorableDiskMounts, hostnameBackup, customWallpaperPath
-        case recentMetalHUDApps, hoYoWaitSeconds, excludesSensitiveCacheFiles, metalHUDOptions
+        case recentMetalHUDApps, hoYoWaitSeconds, excludesSensitiveCacheFiles, metalHUDOptions, navigationLayoutMode
     }
 
     public init(from decoder: Decoder) throws {
@@ -361,6 +388,7 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
         hoYoWaitSeconds = [10, 15, 20].contains(decodedWait) ? decodedWait : 15
         excludesSensitiveCacheFiles = try container.decodeIfPresent(Bool.self, forKey: .excludesSensitiveCacheFiles) ?? true
         metalHUDOptions = try container.decodeIfPresent(MetalHUDOptions.self, forKey: .metalHUDOptions) ?? MetalHUDOptions()
+        navigationLayoutMode = try container.decodeIfPresent(NavigationLayoutMode.self, forKey: .navigationLayoutMode) ?? .sidebar
     }
 }
 

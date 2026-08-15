@@ -172,6 +172,11 @@ final class AppModel: ObservableObject {
         setTransientStatus(.succeeded, message: tr("已重置 Metal HUD 配置", "Metal HUD settings reset"))
     }
 
+    func setNavigationLayoutMode(_ mode: NavigationLayoutMode) {
+        configuration.navigationLayoutMode = mode
+        saveConfiguration()
+    }
+
     func exportMetalHUDOptions() {
         let panel = NSSavePanel()
         panel.title = tr("导出 Metal HUD 配置", "Export Metal HUD Configuration")
