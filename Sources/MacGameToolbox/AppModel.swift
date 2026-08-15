@@ -612,10 +612,12 @@ final class AppModel: ObservableObject {
     }
 
     func repairCoreFeatures() {
-        runTask(tr("正在修复核心功能", "Repairing core features")) {
+        runTask(tr("正在修复核心服务…", "Repairing core features…")) {
             self.status.phase = .awaitingAuthorization
-            try await Self.runCoreFeatureRepairScript()
-            return tr("核心功能已修复", "Core features repaired")
+            try await self.privileged.installOrReinstallHelper()
+            try await self.privileged.perform(.healthCheck)
+            self.checkSystemHealth()
+            return tr("核心服务已成功修复", "Core features repaired successfully")
         }
     }
 
@@ -648,50 +650,6 @@ final class AppModel: ObservableObject {
         return formatter.string(from: Date())
     }
 
-    private static func runCoreFeatureRepairScript() async throws {
-        let shellScript = """
-        for target in com.iven.macgametoolbox.helper com.iven.macgametoolbox.helper.v9 com.iven.macgametoolbox.helper.v8 com.iven.macgametoolbox.helper.v7 com.iven.macgametoolbox.helper.v6 com.iven.macgametoolbox.helper.v5 com.iven.macgametoolbox.helper.v4 com.iven.macgametoolbox.helper.v3; do
-            /bin/launchctl bootout system "/Library/LaunchDaemons/$target.plist" 2>/dev/null || true
-            rm -f "/Library/LaunchDaemons/$target.plist"
-            rm -f "/Library/PrivilegedHelperTools/$target"
-            rm -f "/Library/PrivilegedHelperTools/$target.requirement"
-        done
-        /bin/launchctl bootout system /Library/LaunchDaemons/macgametoolbox.helper.plist 2>/dev/null || true
-        /bin/launchctl enable system/macgametoolbox.helper
-        if [ -f /Library/LaunchDaemons/macgametoolbox.helper.plist ]; then
-            /bin/launchctl bootstrap system /Library/LaunchDaemons/macgametoolbox.helper.plist
-        fi
-        """
-        let appleScript = """
-        on run argv
-            do shell script item 1 of argv with administrator privileges
-        end run
-        """
-
-        let result: (Int32, String, String) = try await Task.detached(priority: .userInitiated) {
-            let process = Process()
-            let outputPipe = Pipe()
-            let errorPipe = Pipe()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-            process.arguments = ["-e", appleScript, "--", shellScript]
-            process.standardOutput = outputPipe
-            process.standardError = errorPipe
-            try process.run()
-            process.waitUntilExit()
-            let output = String(decoding: outputPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            let error = String(decoding: errorPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            return (process.terminationStatus, output, error)
-        }.value
-
-        guard result.0 == 0 else {
-            if result.2.contains("(-128)") { throw ToolboxError.authorizationCancelled }
-            let message = result.2.isEmpty ? result.1 : result.2
-            throw ToolboxError.commandFailed(message.isEmpty ? tr("核心功能修复失败", "Core feature repair failed") : message)
-        }
-    }
-
     // MARK: - System Health Inspector
 
     func checkSystemHealth() {
@@ -704,11 +662,12 @@ final class AppModel: ObservableObject {
     }
 
     func cleanAllLegacyHelpersAndRepair() {
-        runTask(tr("正在清理残留并修复服务…", "Cleaning legacy services & repairing…")) {
-            try await Self.runCoreFeatureRepairScript()
-            try? await self.privileged.perform(.healthCheck)
+        runTask(tr("正在清理残留并注册服务…", "Cleaning legacy services & registering…")) {
+            self.status.phase = .awaitingAuthorization
+            try await self.privileged.installOrReinstallHelper()
+            try await self.privileged.perform(.healthCheck)
             self.checkSystemHealth()
-            return tr("已清理历史残留并成功修复核心服务", "Cleaned legacy residuals and repaired core services")
+            return tr("已清理历史残留并成功注册核心服务", "Cleaned legacy residuals and successfully registered core service")
         }
     }
 

@@ -20,6 +20,10 @@ public final class PrivilegedHelperClient: PrivilegedOperating, @unchecked Senda
         return "persistent helper: \(installed ? "installed" : "not installed"), \(signing)"
     }
 
+    public func installOrReinstallHelper() async throws {
+        try await coordinator.install()
+    }
+
     public func perform(_ operation: PrivilegedOperation) async throws {
         try await coordinator.perform(Self.request(for: operation))
     }
@@ -94,7 +98,7 @@ private actor PrivilegedHelperCoordinator {
         DiagnosticFileLogger.write("Persistent helper request completed")
     }
 
-    private func install() async throws {
+    func install() async throws {
         let helperURL = Bundle.main.bundleURL
             .appendingPathComponent("Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper")
         guard FileManager.default.isExecutableFile(atPath: helperURL.path) else {
