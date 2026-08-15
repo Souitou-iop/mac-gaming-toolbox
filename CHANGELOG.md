@@ -4,7 +4,7 @@ All notable changes to **Mac 游戏工具箱 (Mac Gaming Toolbox)** will be docu
 
 ---
 
-## [v3.1.0] - 2026-08-15
+## [v3.1.0] - 2026-08-16
 
 ### 🚀 新特性与亮点 (Highlights)
 - **侧边栏架构重构 (Native Sidebar UI)**：全面采用 `NavigationSplitView` 与原生 `GroupBox`、`LabeledContent` 控件，告别多层嵌套弹窗，符合 Apple HIG 标准。
