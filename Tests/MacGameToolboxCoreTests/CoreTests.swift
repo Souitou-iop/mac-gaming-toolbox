@@ -757,3 +757,26 @@ actor MockRunner: CommandRunning {
     #expect(WineBottleType.customWine.iconName == "folder.fill.badge.gearshape")
 }
 
+@Test func systemHealthInspectorGathersDiagnosticItems() async throws {
+    let inspector = SystemHealthInspector()
+    let report = await inspector.performFullHealthCheck(privileged: nil)
+
+    #expect(!report.items.isEmpty)
+    let names = report.items.map(\.nameZh)
+    #expect(names.contains("特权辅助服务 (Privileged Helper)"))
+    #expect(names.contains("Metal HUD 注入环境"))
+    #expect(names.contains("缓存与本地存储访问权限"))
+}
+
+@Test func healthReportModelsRoundTrip() throws {
+    let item = HealthCheckItem(nameZh: "测试服务", nameEn: "Test Service", status: .healthy, detailZh: "一切正常", detailEn: "All good")
+    let report = SystemHealthReport(items: [item], legacyHelpersFound: [], checkedAt: Date())
+    let data = try JSONEncoder().encode(report)
+    let decoded = try JSONDecoder().decode(SystemHealthReport.self, from: data)
+
+    #expect(decoded.allHealthy)
+    #expect(decoded.items.count == 1)
+    #expect(decoded.items.first?.nameZh == "测试服务")
+}
+
+

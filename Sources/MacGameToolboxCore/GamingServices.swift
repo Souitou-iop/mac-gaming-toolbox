@@ -855,3 +855,97 @@ public actor PerformanceSnapshotService {
     }
 }
 
+// MARK: - System Health Inspector
+
+public actor SystemHealthInspector {
+    private let runner: any CommandRunning
+    private let fileManager: FileManager
+
+    public init(runner: any CommandRunning = ProcessCommandRunner(), fileManager: FileManager = .default) {
+        self.runner = runner
+        self.fileManager = fileManager
+    }
+
+    public func performFullHealthCheck(privileged: (any PrivilegedOperating)?) async -> SystemHealthReport {
+        var items: [HealthCheckItem] = []
+        var legacyFound: [String] = []
+
+        // 1. Privileged Helper Check
+        let helperPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper"
+        let plistPath = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.plist"
+        let helperExists = fileManager.fileExists(atPath: helperPath)
+        let plistExists = fileManager.fileExists(atPath: plistPath)
+
+        var helperWorking = false
+        if helperExists && plistExists, let privileged {
+            do {
+                try await privileged.perform(.healthCheck)
+                helperWorking = true
+            } catch {
+                helperWorking = false
+            }
+        }
+
+        if helperWorking {
+            items.append(HealthCheckItem(
+                nameZh: "特权辅助服务 (Privileged Helper)",
+                nameEn: "Privileged Helper Service",
+                status: .healthy,
+                detailZh: "服务已安装且 XPC 通信正常响应。",
+                detailEn: "Installed and XPC communication is responding normally."
+            ))
+        } else if helperExists || plistExists {
+            items.append(HealthCheckItem(
+                nameZh: "特权辅助服务 (Privileged Helper)",
+                nameEn: "Privileged Helper Service",
+                status: .warning,
+                detailZh: "辅助程序已安装但 XPC 尚未响应，可能需在系统设置中允许后台活动。",
+                detailEn: "Installed but XPC not responding. May need approval in Login Items & Extensions."
+            ))
+        } else {
+            items.append(HealthCheckItem(
+                nameZh: "特权辅助服务 (Privileged Helper)",
+                nameEn: "Privileged Helper Service",
+                status: .healthy,
+                detailZh: "服务就绪，首次使用需要提权的功能时将无缝注册。",
+                detailEn: "Ready. Will register seamlessly on first privileged action."
+            ))
+        }
+
+        // 2. Legacy Helper Residuals Check
+        let legacyNames = ["v9", "v8", "v7", "v6", "v5", "v4", "v3"]
+        for v in legacyNames {
+            let legacyP = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.\(v).plist"
+            let legacyT = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.\(v)"
+            if fileManager.fileExists(atPath: legacyP) || fileManager.fileExists(atPath: legacyT) {
+                legacyFound.append("helper.\(v)")
+            }
+        }
+
+        // 3. Metal HUD Environment Check
+        let hudEnvResult = try? await runner.run("/bin/launchctl", arguments: ["getenv", "MTL_HUD_ENABLED"])
+        let hudActive = hudEnvResult?.outputString == "1"
+        items.append(HealthCheckItem(
+            nameZh: "Metal HUD 注入环境",
+            nameEn: "Metal HUD Hook Environment",
+            status: .healthy,
+            detailZh: hudActive ? "全局 HUD 变量已注入 (MTL_HUD_ENABLED=1)。" : "全局 HUD 变量就绪（当前处于关闭状态）。",
+            detailEn: hudActive ? "Global HUD variable active (MTL_HUD_ENABLED=1)." : "Global HUD variable ready (currently off)."
+        ))
+
+        // 4. Storage & Cache Access Check
+        let cachesPath = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches").path
+        let cachesWritable = fileManager.isWritableFile(atPath: cachesPath)
+        items.append(HealthCheckItem(
+            nameZh: "缓存与本地存储访问权限",
+            nameEn: "Storage & Cache Directory Access",
+            status: cachesWritable ? .healthy : .error,
+            detailZh: cachesWritable ? "用户缓存目录具备完整读写权限。" : "用户缓存目录读写权限受限。",
+            detailEn: cachesWritable ? "User cache directory is fully accessible." : "User cache directory access is restricted."
+        ))
+
+        return SystemHealthReport(items: items, legacyHelpersFound: legacyFound, checkedAt: Date())
+    }
+}
+
+

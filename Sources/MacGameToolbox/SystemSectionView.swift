@@ -19,9 +19,12 @@ public struct SystemSectionView: View {
             GamingSectionHeader(
                 icon: "gearshape.2.fill",
                 title: tr("系统工具与偏好设置", "System Tools & Preferences"),
-                subtitle: tr("反作弊主机名伪装、系统诊断与官方教程", "Anti-cheat environment spoofing, system diagnostics, and tutorials"),
+                subtitle: tr("软件服务与权限状态体检、反作弊主机名伪装与系统诊断", "Service & permission health diagnostics, anti-cheat environment spoofing, and system tools"),
                 accentColor: .purple
             )
+
+            // Service & Permission Health Inspector Box
+            systemHealthBox
 
             // SteamDeck Spoofing Box
             steamDeckSpoofBox
@@ -34,6 +37,127 @@ public struct SystemSectionView: View {
 
             // Diagnostics & Repair Box
             diagnosticsBox
+        }
+        .onAppear {
+            if model.healthReport == nil {
+                model.checkSystemHealth()
+            }
+        }
+    }
+
+    // MARK: - Service & Permission Health Box
+
+    private var systemHealthBox: some View {
+        let isHealthy = model.healthReport?.allHealthy ?? false
+        let hasLegacy = !(model.healthReport?.legacyHelpersFound.isEmpty ?? true)
+
+        return GroupBox(label:
+            HStack(spacing: 8) {
+                Label(tr("软件服务与系统权限检测", "Software Service & Permission Health"), systemImage: "shield.checkerboard")
+                    .font(.headline)
+                    .foregroundStyle(.purple)
+                LiveStatusBadge(
+                    isHealthy ? .active : (hasLegacy ? .warning : .idle),
+                    title: isHealthy ? tr("全部正常", "All Healthy") : (hasLegacy ? tr("发现历史残留", "Legacy Residuals") : tr("就绪", "Ready"))
+                )
+            }
+        ) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(tr("检测特权辅助服务 (XPC 通信)、系统后台运行权限与 Metal HUD 注入环境，支持一键体检与历史旧版本残留清理。",
+                        "Inspects privileged helper XPC status, background items permission, and Metal HUD injection environment."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Divider()
+
+                // Health Items List
+                if let report = model.healthReport {
+                    VStack(spacing: 8) {
+                        ForEach(report.items) { item in
+                            HStack(alignment: .top, spacing: 10) {
+                                Image(systemName: item.status.iconName)
+                                    .foregroundStyle(item.status == .healthy ? .green : (item.status == .warning ? .orange : .red))
+                                    .font(.subheadline)
+                                    .padding(.top, 1)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(tr(item.nameZh, item.nameEn))
+                                        .font(.caption.bold())
+                                    Text(tr(item.detailZh, item.detailEn))
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(6)
+                            .background(Color(nsColor: .controlBackgroundColor).opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+
+                    // Legacy Helper Warning Banner
+                    if !report.legacyHelpersFound.isEmpty {
+                        HStack(spacing: 10) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(tr("检测到历史旧版本辅助服务残留", "Legacy Helper Residuals Detected"))
+                                    .font(.caption.bold())
+                                Text(tr("发现历史服务：\(report.legacyHelpersFound.joined(separator: ", "))。建议点击下方一键清理。",
+                                        "Found: \(report.legacyHelpersFound.joined(separator: ", ")). Click cleanup below."))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                        .padding(8)
+                        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+                    }
+                } else {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text(tr("正在进行服务健康诊断…", "Inspecting system health…"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                Divider()
+
+                // Action Controls
+                HStack(spacing: 12) {
+                    Button {
+                        model.cleanAllLegacyHelpersAndRepair()
+                    } label: {
+                        Label(tr("一键体检与自动修复", "Run Full Diagnostic & Auto Repair"), systemImage: "sparkles")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.purple)
+                    .controlSize(.regular)
+
+                    Button {
+                        model.openBackgroundSettings()
+                    } label: {
+                        Label(tr("打开系统后台设置…", "Open Login Items…"), systemImage: "gearshape")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+
+                    Button {
+                        model.checkSystemHealth()
+                    } label: {
+                        Label(tr("刷新", "Refresh"), systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                    .disabled(model.isCheckingHealth)
+
+                    Spacer()
+                }
+            }
+            .padding(6)
         }
     }
 

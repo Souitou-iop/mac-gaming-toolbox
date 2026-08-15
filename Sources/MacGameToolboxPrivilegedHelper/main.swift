@@ -6,16 +6,31 @@ import MacGameToolboxCore
 import Security
 import OSLog
 
-private let serviceName = "com.iven.macgametoolbox.helper.v9"
-private let installedHelperPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v9"
-private let installedPlistPath = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.v9.plist"
-private let requirementPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v9.requirement"
-private let legacyServiceName = "com.iven.macgametoolbox.helper.v8"
-private let legacyPaths = [
-    "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v8",
-    "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v8.requirement",
-    "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.v8.plist"
-]
+private let serviceName = "com.iven.macgametoolbox.helper"
+private let installedHelperPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper"
+private let installedPlistPath = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.plist"
+private let requirementPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.requirement"
+private enum LegacyHelperConfig {
+    static let legacyServiceNames = [
+        "com.iven.macgametoolbox.helper.v9",
+        "com.iven.macgametoolbox.helper.v8",
+        "com.iven.macgametoolbox.helper.v7",
+        "com.iven.macgametoolbox.helper.v6",
+        "com.iven.macgametoolbox.helper.v5",
+        "com.iven.macgametoolbox.helper.v4",
+        "com.iven.macgametoolbox.helper.v3"
+    ]
+
+    static func allLegacyFilePaths() -> [String] {
+        var paths: [String] = []
+        for name in legacyServiceNames {
+            paths.append("/Library/PrivilegedHelperTools/\(name)")
+            paths.append("/Library/PrivilegedHelperTools/\(name).requirement")
+            paths.append("/Library/LaunchDaemons/\(name).plist")
+        }
+        return paths
+    }
+}
 private let hoyoDomains = GamingService.hoyoDomains
 private let logger = Logger(subsystem: "com.iven.macgametoolbox", category: "PrivilegedHelper")
 
@@ -156,9 +171,11 @@ func installPersistentHelper(for appPath: String) throws {
 
     let fileManager = FileManager.default
     try fileManager.createDirectory(atPath: "/Library/PrivilegedHelperTools", withIntermediateDirectories: true)
-    _ = try? run("/bin/launchctl", ["bootout", "system/\(legacyServiceName)"])
-    for path in legacyPaths where fileManager.fileExists(atPath: path) {
-        try fileManager.removeItem(atPath: path)
+    for legacyName in LegacyHelperConfig.legacyServiceNames {
+        _ = try? run("/bin/launchctl", ["bootout", "system/\(legacyName)"])
+    }
+    for path in LegacyHelperConfig.allLegacyFilePaths() where fileManager.fileExists(atPath: path) {
+        try? fileManager.removeItem(atPath: path)
     }
     _ = try? run("/bin/launchctl", ["bootout", "system/\(serviceName)"])
 
@@ -173,6 +190,7 @@ func installPersistentHelper(for appPath: String) throws {
     let plist: [String: Any] = [
         "Label": serviceName,
         "ProgramArguments": [installedHelperPath],
+        "BundleProgram": "Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper",
         "AssociatedBundleIdentifiers": ["com.iven.macgametoolbox"],
         "MachServices": [serviceName: true],
         "RunAtLoad": true

@@ -6,10 +6,10 @@ import OSLog
 import Security
 
 public final class PrivilegedHelperClient: PrivilegedOperating, @unchecked Sendable {
-    static let serviceName = "com.iven.macgametoolbox.helper.v9"
+    static let serviceName = "com.iven.macgametoolbox.helper"
     static let appBundleIdentifier = "com.iven.macgametoolbox"
-    static let installedHelperPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.v9"
-    static let installedPlistPath = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.v9.plist"
+    static let installedHelperPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper"
+    static let installedPlistPath = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.plist"
     private let coordinator = PrivilegedHelperCoordinator()
 
     public init() {}
@@ -17,7 +17,7 @@ public final class PrivilegedHelperClient: PrivilegedOperating, @unchecked Senda
     public func diagnosticStatus() -> String {
         let installed = FileManager.default.fileExists(atPath: Self.installedHelperPath)
         let signing = Self.teamIdentifier() == nil ? "development signing" : "Developer ID signing"
-        return "persistent helper v9: \(installed ? "installed" : "not installed"), \(signing)"
+        return "persistent helper: \(installed ? "installed" : "not installed"), \(signing)"
     }
 
     public func perform(_ operation: PrivilegedOperation) async throws {

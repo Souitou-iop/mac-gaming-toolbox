@@ -498,6 +498,53 @@ public struct PerAppMetalHUDProfile: Identifiable, Codable, Equatable, Sendable 
     }
 }
 
+public enum HealthItemStatus: String, Codable, Sendable {
+    case healthy
+    case warning
+    case error
+
+    public var iconName: String {
+        switch self {
+        case .healthy: return "checkmark.circle.fill"
+        case .warning: return "exclamationmark.triangle.fill"
+        case .error: return "xmark.circle.fill"
+        }
+    }
+}
+
+public struct HealthCheckItem: Identifiable, Codable, Equatable, Sendable {
+    public var id: String { nameZh }
+    public let nameZh: String
+    public let nameEn: String
+    public let status: HealthItemStatus
+    public let detailZh: String
+    public let detailEn: String
+
+    public init(nameZh: String, nameEn: String, status: HealthItemStatus, detailZh: String, detailEn: String) {
+        self.nameZh = nameZh
+        self.nameEn = nameEn
+        self.status = status
+        self.detailZh = detailZh
+        self.detailEn = detailEn
+    }
+}
+
+public struct SystemHealthReport: Codable, Equatable, Sendable {
+    public var items: [HealthCheckItem]
+    public var legacyHelpersFound: [String]
+    public var checkedAt: Date
+
+    public var allHealthy: Bool {
+        items.allSatisfy { $0.status == .healthy } && legacyHelpersFound.isEmpty
+    }
+
+    public init(items: [HealthCheckItem] = [], legacyHelpersFound: [String] = [], checkedAt: Date = Date()) {
+        self.items = items
+        self.legacyHelpersFound = legacyHelpersFound
+        self.checkedAt = checkedAt
+    }
+}
+
 public struct AppConfiguration: Codable, Equatable, Sendable {
     public var schemaVersion = 3
     public var didImportLegacyConfiguration = false

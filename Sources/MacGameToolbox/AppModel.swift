@@ -39,6 +39,8 @@ final class AppModel: ObservableObject {
     @Published var bottleGameSaves: [GameSaveLocation] = []
     @Published var isScanningSaves = false
     @Published var isBackingUpSave = false
+    @Published var healthReport: SystemHealthReport?
+    @Published var isCheckingHealth = false
 
     private let privileged = PrivilegedHelperClient()
     private let configurationStore: ConfigurationStore
@@ -51,6 +53,7 @@ final class AppModel: ObservableObject {
     private let focusBooster = GamingFocusBooster()
     private let saveFinderService = GameSaveFinderService()
     private let snapshotService = PerformanceSnapshotService()
+    private let healthInspector = SystemHealthInspector()
     private var hoyoTask: Task<Void, Never>?
     private var automaticMountTask: Task<Void, Never>?
     private var didLaunch = false
@@ -80,6 +83,7 @@ final class AppModel: ObservableObject {
                 await gamingService.cleanStaleHoYoEntries()
             }
             startAutomaticMountMonitoring()
+            checkSystemHealth()
         }
     }
 
@@ -646,9 +650,17 @@ final class AppModel: ObservableObject {
 
     private static func runCoreFeatureRepairScript() async throws {
         let shellScript = """
-        /bin/launchctl bootout system /Library/LaunchDaemons/com.iven.macgametoolbox.helper.v9.plist 2>/dev/null || true
-        /bin/launchctl enable system/com.iven.macgametoolbox.helper.v9
-        /bin/launchctl bootstrap system /Library/LaunchDaemons/com.iven.macgametoolbox.helper.v9.plist
+        for v in v9 v8 v7 v6 v5 v4 v3 v2 v1; do
+            /bin/launchctl bootout system "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.$v.plist" 2>/dev/null || true
+            rm -f "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.$v.plist"
+            rm -f "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.$v"
+            rm -f "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.$v.requirement"
+        done
+        /bin/launchctl bootout system /Library/LaunchDaemons/com.iven.macgametoolbox.helper.plist 2>/dev/null || true
+        /bin/launchctl enable system/com.iven.macgametoolbox.helper
+        if [ -f /Library/LaunchDaemons/com.iven.macgametoolbox.helper.plist ]; then
+            /bin/launchctl bootstrap system /Library/LaunchDaemons/com.iven.macgametoolbox.helper.plist
+        fi
         """
         let appleScript = """
         on run argv
@@ -677,6 +689,32 @@ final class AppModel: ObservableObject {
             if result.2.contains("(-128)") { throw ToolboxError.authorizationCancelled }
             let message = result.2.isEmpty ? result.1 : result.2
             throw ToolboxError.commandFailed(message.isEmpty ? tr("核心功能修复失败", "Core feature repair failed") : message)
+        }
+    }
+
+    // MARK: - System Health Inspector
+
+    func checkSystemHealth() {
+        isCheckingHealth = true
+        Task {
+            let report = await healthInspector.performFullHealthCheck(privileged: privileged)
+            self.healthReport = report
+            self.isCheckingHealth = false
+        }
+    }
+
+    func cleanAllLegacyHelpersAndRepair() {
+        runTask(tr("正在清理残留并修复服务…", "Cleaning legacy services & repairing…")) {
+            try await Self.runCoreFeatureRepairScript()
+            try? await self.privileged.perform(.healthCheck)
+            self.checkSystemHealth()
+            return tr("已清理历史残留并成功修复核心服务", "Cleaned legacy residuals and repaired core services")
+        }
+    }
+
+    func openBackgroundSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension") {
+            NSWorkspace.shared.open(url)
         }
     }
 
