@@ -262,6 +262,7 @@ final class AppModel: ObservableObject {
 
     func openMetalHUDProcessManager() {
         showingMetalHUDProcessManager = true
+        selectedInterferingPIDs.removeAll()
         scanInterferingProcesses()
     }
 
@@ -272,7 +273,8 @@ final class AppModel: ObservableObject {
             do {
                 let detected = try await gamingService.detectMetalHUDInterferingProcesses(recentAppPaths: recentPaths)
                 self.interferingProcesses = detected
-                self.selectedInterferingPIDs = Set(detected.map(\.pid))
+                let validPIDs = Set(detected.map(\.pid))
+                self.selectedInterferingPIDs = self.selectedInterferingPIDs.intersection(validPIDs)
             } catch {
                 self.interferingProcesses = []
                 self.selectedInterferingPIDs.removeAll()
