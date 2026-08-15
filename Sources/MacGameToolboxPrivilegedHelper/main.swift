@@ -191,7 +191,6 @@ func installPersistentHelper(for appPath: String) throws {
     let plist: [String: Any] = [
         "Label": serviceName,
         "ProgramArguments": [installedHelperPath],
-        "BundleProgram": "Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper",
         "AssociatedBundleIdentifiers": ["com.iven.macgametoolbox"],
         "MachServices": [serviceName: true],
         "RunAtLoad": true
