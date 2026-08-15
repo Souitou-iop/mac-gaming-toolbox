@@ -871,8 +871,8 @@ public actor SystemHealthInspector {
         var legacyFound: [String] = []
 
         // 1. Privileged Helper Check
-        let helperPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper"
-        let plistPath = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.plist"
+        let helperPath = "/Library/PrivilegedHelperTools/macgametoolbox.helper"
+        let plistPath = "/Library/LaunchDaemons/macgametoolbox.helper.plist"
         let helperExists = fileManager.fileExists(atPath: helperPath)
         let plistExists = fileManager.fileExists(atPath: plistPath)
 
@@ -891,8 +891,8 @@ public actor SystemHealthInspector {
                 nameZh: "特权辅助服务 (Privileged Helper)",
                 nameEn: "Privileged Helper Service",
                 status: .healthy,
-                detailZh: "服务已安装且 XPC 通信正常响应。",
-                detailEn: "Installed and XPC communication is responding normally."
+                detailZh: "服务已安装且 XPC 通信正常响应 (macgametoolbox.helper)。",
+                detailEn: "Installed and XPC communication is responding normally (macgametoolbox.helper)."
             ))
         } else if helperExists || plistExists {
             items.append(HealthCheckItem(
@@ -913,12 +913,12 @@ public actor SystemHealthInspector {
         }
 
         // 2. Legacy Helper Residuals Check
-        let legacyNames = ["v9", "v8", "v7", "v6", "v5", "v4", "v3"]
-        for v in legacyNames {
-            let legacyP = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.\(v).plist"
-            let legacyT = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.\(v)"
+        let legacyNames = ["com.iven.macgametoolbox.helper", "com.iven.macgametoolbox.helper.v9", "com.iven.macgametoolbox.helper.v8", "com.iven.macgametoolbox.helper.v7", "com.iven.macgametoolbox.helper.v6", "com.iven.macgametoolbox.helper.v5", "com.iven.macgametoolbox.helper.v4", "com.iven.macgametoolbox.helper.v3"]
+        for legacy in legacyNames {
+            let legacyP = "/Library/LaunchDaemons/\(legacy).plist"
+            let legacyT = "/Library/PrivilegedHelperTools/\(legacy)"
             if fileManager.fileExists(atPath: legacyP) || fileManager.fileExists(atPath: legacyT) {
-                legacyFound.append("helper.\(v)")
+                legacyFound.append(legacy)
             }
         }
 

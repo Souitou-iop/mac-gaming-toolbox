@@ -6,12 +6,13 @@ import MacGameToolboxCore
 import Security
 import OSLog
 
-private let serviceName = "com.iven.macgametoolbox.helper"
-private let installedHelperPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper"
-private let installedPlistPath = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.plist"
-private let requirementPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.requirement"
+private let serviceName = "macgametoolbox.helper"
+private let installedHelperPath = "/Library/PrivilegedHelperTools/macgametoolbox.helper"
+private let installedPlistPath = "/Library/LaunchDaemons/macgametoolbox.helper.plist"
+private let requirementPath = "/Library/PrivilegedHelperTools/macgametoolbox.helper.requirement"
 private enum LegacyHelperConfig {
     static let legacyServiceNames = [
+        "com.iven.macgametoolbox.helper",
         "com.iven.macgametoolbox.helper.v9",
         "com.iven.macgametoolbox.helper.v8",
         "com.iven.macgametoolbox.helper.v7",

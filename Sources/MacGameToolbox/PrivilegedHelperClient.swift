@@ -6,10 +6,10 @@ import OSLog
 import Security
 
 public final class PrivilegedHelperClient: PrivilegedOperating, @unchecked Sendable {
-    static let serviceName = "com.iven.macgametoolbox.helper"
+    static let serviceName = "macgametoolbox.helper"
     static let appBundleIdentifier = "com.iven.macgametoolbox"
-    static let installedHelperPath = "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper"
-    static let installedPlistPath = "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.plist"
+    static let installedHelperPath = "/Library/PrivilegedHelperTools/macgametoolbox.helper"
+    static let installedPlistPath = "/Library/LaunchDaemons/macgametoolbox.helper.plist"
     private let coordinator = PrivilegedHelperCoordinator()
 
     public init() {}

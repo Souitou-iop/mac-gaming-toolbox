@@ -21,7 +21,7 @@ HELPER="$APP/Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper"
 xattr -cr "$APP"
 xattr -d com.apple.FinderInfo "$APP" 2>/dev/null || true
 xattr -d 'com.apple.fileprovider.fpfs#P' "$APP" 2>/dev/null || true
-codesign --force --sign - -i com.iven.macgametoolbox.helper "$HELPER"
+codesign --force --sign - -i macgametoolbox.helper "$HELPER"
 for attempt in 1 2 3 4 5; do
   xattr -d com.apple.FinderInfo "$APP" 2>/dev/null || true
   xattr -d 'com.apple.fileprovider.fpfs#P' "$APP" 2>/dev/null || true

@@ -2,12 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>Label</key><string>com.iven.macgametoolbox.helper</string>
+    <key>Label</key><string>macgametoolbox.helper</string>
     <key>BundleProgram</key><string>Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper</string>
     <key>AssociatedBundleIdentifiers</key>
     <array><string>com.iven.macgametoolbox</string></array>
     <key>MachServices</key>
-    <dict><key>com.iven.macgametoolbox.helper</key><true/></dict>
+    <dict><key>macgametoolbox.helper</key><true/></dict>
     <key>RunAtLoad</key><true/>
 </dict>
 </plist>

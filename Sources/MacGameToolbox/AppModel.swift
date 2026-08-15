@@ -650,16 +650,16 @@ final class AppModel: ObservableObject {
 
     private static func runCoreFeatureRepairScript() async throws {
         let shellScript = """
-        for v in v9 v8 v7 v6 v5 v4 v3 v2 v1; do
-            /bin/launchctl bootout system "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.$v.plist" 2>/dev/null || true
-            rm -f "/Library/LaunchDaemons/com.iven.macgametoolbox.helper.$v.plist"
-            rm -f "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.$v"
-            rm -f "/Library/PrivilegedHelperTools/com.iven.macgametoolbox.helper.$v.requirement"
+        for target in com.iven.macgametoolbox.helper com.iven.macgametoolbox.helper.v9 com.iven.macgametoolbox.helper.v8 com.iven.macgametoolbox.helper.v7 com.iven.macgametoolbox.helper.v6 com.iven.macgametoolbox.helper.v5 com.iven.macgametoolbox.helper.v4 com.iven.macgametoolbox.helper.v3; do
+            /bin/launchctl bootout system "/Library/LaunchDaemons/$target.plist" 2>/dev/null || true
+            rm -f "/Library/LaunchDaemons/$target.plist"
+            rm -f "/Library/PrivilegedHelperTools/$target"
+            rm -f "/Library/PrivilegedHelperTools/$target.requirement"
         done
-        /bin/launchctl bootout system /Library/LaunchDaemons/com.iven.macgametoolbox.helper.plist 2>/dev/null || true
-        /bin/launchctl enable system/com.iven.macgametoolbox.helper
-        if [ -f /Library/LaunchDaemons/com.iven.macgametoolbox.helper.plist ]; then
-            /bin/launchctl bootstrap system /Library/LaunchDaemons/com.iven.macgametoolbox.helper.plist
+        /bin/launchctl bootout system /Library/LaunchDaemons/macgametoolbox.helper.plist 2>/dev/null || true
+        /bin/launchctl enable system/macgametoolbox.helper
+        if [ -f /Library/LaunchDaemons/macgametoolbox.helper.plist ]; then
+            /bin/launchctl bootstrap system /Library/LaunchDaemons/macgametoolbox.helper.plist
         fi
         """
         let appleScript = """
