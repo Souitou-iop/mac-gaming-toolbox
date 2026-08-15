@@ -7,50 +7,22 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.colorScheme) private var colorScheme
+    @State private var selectedCategory: NavigationCategory? = .overview
     @State private var nativeGlassEnabled = NSApp.isActive
     @State private var showingMetalHUDApps = false
     @State private var showingMetalHUDTuner = false
     @State private var displayedStatus = TaskStatus()
     @State private var isStatusPanelVisible = false
 
-    private let columns = [GridItem(.adaptive(minimum: 280), spacing: 18)]
     private var hasCustomWallpaper: Bool { model.configuration.customWallpaperPath != nil }
     private var effectiveColorScheme: ColorScheme { hasCustomWallpaper ? .dark : colorScheme }
     private var useLiquidGlassUI: Bool { hasCustomWallpaper }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            background
-                .transaction { transaction in
-                    transaction.animation = nil
-                }
-
-            VStack(spacing: 0) {
-                // Top Global Bar
-                topToolbarBar
-
-                // Dynamic Body based on navigationLayoutMode
-                ZStack(alignment: .bottom) {
-                    Group {
-                        if model.configuration.navigationLayoutMode == .sidebar {
-                            SidebarLayoutView()
-                        } else {
-                            CommandCenterView()
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .animation(.easeInOut(duration: 0.25), value: model.configuration.navigationLayoutMode)
-
-                    // Bottom floating status panel when active
-                    statusPanel
-                        .padding(.horizontal, 28)
-                        .padding(.bottom, 22)
-                        .compositingGroup()
-                        .opacity(isStatusPanelVisible ? 1 : 0)
-                        .allowsHitTesting(isStatusPanelVisible)
-                        .accessibilityHidden(!isStatusPanelVisible)
-                }
-            }
+        NavigationSplitView {
+            sidebarContent
+        } detail: {
+            detailContent
         }
         .background(WindowAppearanceConfigurator(nativeGlassEnabled: $nativeGlassEnabled, colorScheme: effectiveColorScheme, isEnabled: useLiquidGlassUI))
         .sheet(isPresented: $model.showingDiskManager) { DiskManagerView().environmentObject(model) }
@@ -215,42 +187,81 @@ struct DashboardView: View {
         }
     }
 
-    private var topToolbarBar: some View {
-        HStack(spacing: 12) {
-            if model.configuration.navigationLayoutMode == .commandCenter {
-                HStack(spacing: 8) {
-                    Image(systemName: "gamecontroller.fill")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(GamingTheme.gradientCyanEmerald)
-                    Text(tr("Mac游戏工具箱", "Mac Gaming Toolbox"))
-                        .font(.system(size: 13, weight: .bold))
-                }
+    private var sidebarContent: some View {
+        List(NavigationCategory.allCases, selection: $selectedCategory) { category in
+            NavigationLink(value: category) {
+                Label(tr(category.titleZh, category.titleEn), systemImage: category.iconName)
+                    .badge(badgeForCategory(category))
             }
-
-            Spacer()
-
-            Picker("", selection: Binding(
-                get: { model.configuration.navigationLayoutMode },
-                set: { model.setNavigationLayoutMode($0) }
-            )) {
-                ForEach(NavigationLayoutMode.allCases, id: \.self) { mode in
-                    Label(tr(mode.titleZh, mode.titleEn), systemImage: mode.iconName).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 220)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
-        .background(
-            Color.black.opacity(0.2)
-        )
-        .overlay(
-            Rectangle()
-                .fill(Color.white.opacity(0.06))
-                .frame(height: 0.5),
-            alignment: .bottom
-        )
+        .listStyle(.sidebar)
+        .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 280)
+        .safeAreaInset(edge: .bottom) {
+            sidebarFooter
+        }
+    }
+
+    private var detailContent: some View {
+        ZStack(alignment: .bottom) {
+            background
+                .transaction { transaction in
+                    transaction.animation = nil
+                }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    switch selectedCategory ?? .overview {
+                    case .overview:
+                        OverviewSectionView { target in
+                            selectedCategory = target
+                        }
+                    case .metalHUD:
+                        MetalHUDSectionView()
+                    case .gameBoost:
+                        GameBoostSectionView()
+                    case .storage:
+                        StorageSectionView()
+                    case .system:
+                        SystemSectionView()
+                    }
+                }
+                .padding(24)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            statusPanel
+                .padding(.horizontal, 24)
+                .padding(.bottom, 16)
+                .compositingGroup()
+                .opacity(isStatusPanelVisible ? 1 : 0)
+                .allowsHitTesting(isStatusPanelVisible)
+                .accessibilityHidden(!isStatusPanelVisible)
+        }
+    }
+
+    private var sidebarFooter: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(model.metalHUDEnabled ? Color.green : Color.secondary)
+                .frame(width: 7, height: 7)
+            Text(model.metalHUDEnabled ? tr("Metal HUD 已开启", "Metal HUD Active") : tr("工具箱就绪", "Toolbox Ready"))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.3))
+    }
+
+    private func badgeForCategory(_ category: NavigationCategory) -> String? {
+        if category == .metalHUD && model.metalHUDEnabled {
+            return "ON"
+        } else if category == .system && model.configuration.hostnameBackup != nil {
+            return "Deck"
+        }
+        return nil
     }
 
     private var statusIcon: String {

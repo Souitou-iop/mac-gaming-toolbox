@@ -324,6 +324,46 @@ public struct MetalHUDOptions: Codable, Equatable, Sendable {
     }
 }
 
+public enum NavigationCategory: String, Codable, CaseIterable, Identifiable, Sendable {
+    case overview
+    case metalHUD
+    case gameBoost
+    case storage
+    case system
+
+    public var id: String { rawValue }
+
+    public var titleZh: String {
+        switch self {
+        case .overview: return "概览与状态"
+        case .metalHUD: return "Metal HUD 调优"
+        case .gameBoost: return "游戏加速与启动"
+        case .storage: return "存储与磁盘"
+        case .system: return "系统与设置"
+        }
+    }
+
+    public var titleEn: String {
+        switch self {
+        case .overview: return "Overview"
+        case .metalHUD: return "Metal HUD Tuner"
+        case .gameBoost: return "Game Boost"
+        case .storage: return "Storage & Disks"
+        case .system: return "System & Tools"
+        }
+    }
+
+    public var iconName: String {
+        switch self {
+        case .overview: return "gauge.with.dots.needle.67percent"
+        case .metalHUD: return "chart.xyaxis.line"
+        case .gameBoost: return "bolt.fill"
+        case .storage: return "externaldrive.fill"
+        case .system: return "gearshape.2.fill"
+        }
+    }
+}
+
 public enum NavigationLayoutMode: String, Codable, CaseIterable, Sendable {
     case sidebar
     case commandCenter

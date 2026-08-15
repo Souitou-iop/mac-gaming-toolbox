@@ -6,25 +6,25 @@ import MacGameToolboxCore
 
 public struct OverviewSectionView: View {
     @EnvironmentObject private var model: AppModel
-    var onNavigateToSection: ((Int) -> Void)?
+    var onNavigateToSection: ((NavigationCategory) -> Void)?
 
     private var isSteamDeckActive: Bool {
         model.configuration.hostnameBackup != nil
     }
 
-    public init(onNavigateToSection: ((Int) -> Void)? = nil) {
+    public init(onNavigateToSection: ((NavigationCategory) -> Void)? = nil) {
         self.onNavigateToSection = onNavigateToSection
     }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // Live Stats Hero Strip
+            // Live Stats Strip
             liveStatsStrip
 
             // Quick Boost Cards
             VStack(alignment: .leading, spacing: 14) {
-                Text(tr("快捷电竞工具箱", "Quick Gaming Actions"))
-                    .font(.title3.bold())
+                Text(tr("快捷工具箱", "Quick Actions"))
+                    .font(.headline)
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 280), spacing: 16)], spacing: 16) {
                     // Metal HUD Card
@@ -51,11 +51,11 @@ public struct OverviewSectionView: View {
     private var liveStatsStrip: some View {
         HStack(spacing: 12) {
             MetricStatCard(
-                icon: "gauge.with.dots.needle.67percent",
+                icon: "chart.xyaxis.line",
                 title: tr("Metal HUD 状态", "Metal HUD State"),
                 value: model.metalHUDEnabled ? tr("已开启", "ACTIVE") : tr("未开启", "OFF"),
-                subtitle: model.metalHUDEnabled ? tr("实时环境已注入", "Env Injected") : tr("点击下方开启", "Click to enable"),
-                accentColor: model.metalHUDEnabled ? GamingTheme.neonEmerald : .secondary
+                subtitle: model.metalHUDEnabled ? tr("系统环境已注入", "Env Injected") : tr("点击下方开启", "Tap to enable"),
+                accentColor: model.metalHUDEnabled ? .green : .secondary
             )
 
             MetricStatCard(
@@ -63,7 +63,7 @@ public struct OverviewSectionView: View {
                 title: tr("外接游戏磁盘", "Mounted Disks"),
                 value: "\(model.configuration.diskPresets.count)",
                 subtitle: tr("已配置的挂载预设", "Saved presets"),
-                accentColor: GamingTheme.cyberCyan
+                accentColor: .cyan
             )
 
             MetricStatCard(
@@ -71,7 +71,7 @@ public struct OverviewSectionView: View {
                 title: tr("主机名模式", "Hostname Mode"),
                 value: isSteamDeckActive ? "SteamDeck" : "Mac Native",
                 subtitle: isSteamDeckActive ? tr("反作弊伪装中", "Spoofing active") : tr("原生主机名", "Standard macOS"),
-                accentColor: isSteamDeckActive ? GamingTheme.electricViolet : .secondary
+                accentColor: isSteamDeckActive ? .purple : .secondary
             )
 
             MetricStatCard(
@@ -79,31 +79,20 @@ public struct OverviewSectionView: View {
                 title: tr("最近启动记录", "Recent Games"),
                 value: "\(model.configuration.recentMetalHUDApps.count)",
                 subtitle: tr("快速启动就绪", "Ready to launch"),
-                accentColor: GamingTheme.neonEmerald
+                accentColor: .green
             )
         }
     }
 
-    // MARK: - Quick Action Cards
+    // MARK: - Quick Action Boxes
 
     private var quickMetalHUDCard: some View {
-        GamingGlassCard(isActive: model.metalHUDEnabled, padding: 16) {
-            VStack(alignment: .leading, spacing: 12) {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    ZStack {
-                        Circle()
-                            .fill(model.metalHUDEnabled ? GamingTheme.neonEmerald.opacity(0.2) : Color.white.opacity(0.06))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "gauge.with.dots.needle.67percent")
-                            .foregroundStyle(model.metalHUDEnabled ? GamingTheme.neonEmerald : .secondary)
-                    }
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(tr("Metal HUD 性能监视器", "Metal HUD Monitor"))
-                            .font(.headline)
-                        Text(tr("实时帧率与硬件开销面板", "Real-time FPS & GPU overlay"))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
+                    Label(tr("Metal HUD 监视器", "Metal HUD Monitor"), systemImage: "chart.xyaxis.line")
+                        .font(.headline)
+                        .foregroundStyle(model.metalHUDEnabled ? .green : .primary)
                     Spacer()
                     Toggle("", isOn: Binding(
                         get: { model.metalHUDEnabled },
@@ -113,146 +102,139 @@ public struct OverviewSectionView: View {
                     .labelsHidden()
                 }
 
+                Text(tr("实时呈现 FPS、GPU 与 CPU 开销", "Real-time FPS and hardware overlay."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Divider()
+
                 HStack(spacing: 8) {
-                    Button(tr("调优设置", "Tune Settings")) {
-                        onNavigateToSection?(1) // Navigate to Metal HUD tab
+                    Button(tr("详细调优…", "Tune Settings…")) {
+                        onNavigateToSection?(.metalHUD)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
 
-                    Button(tr("排查进程", "Processes")) {
+                    Button(tr("排查进程…", "Check Processes…")) {
                         model.openMetalHUDProcessManager()
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                 }
             }
+            .padding(4)
         }
     }
 
     private var quickCrossOverCard: some View {
-        GamingGlassCard(padding: 16) {
-            VStack(alignment: .leading, spacing: 12) {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    ZStack {
-                        Circle()
-                            .fill(GamingTheme.cyberCyan.opacity(0.18))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "bolt.fill")
-                            .foregroundStyle(GamingTheme.cyberCyan)
-                    }
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(tr("Wine / CrossOver 优先级", "Wine Game Priority"))
-                            .font(.headline)
-                        Text(tr("优化调度，减少卡顿掉帧", "Renice -20 for smoother fps"))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
+                    Label(tr("Wine 进程优先级", "Wine Priority"), systemImage: "bolt.fill")
+                        .font(.headline)
+                        .foregroundStyle(.cyan)
                     Spacer()
                 }
+
+                Text(tr("调度优先级 Renice -20 减少掉帧卡顿", "Renice -20 for smoother framerate."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Divider()
 
                 HStack(spacing: 8) {
                     Button(tr("一键优化", "Optimize Now")) {
                         model.increaseCrossOverPriority()
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(GamingTheme.cyberCyan)
                     .controlSize(.small)
 
-                    Button(tr("更多设置", "Details")) {
-                        onNavigateToSection?(2) // Navigate to Game Boost tab
+                    Button(tr("更多设置…", "Details…")) {
+                        onNavigateToSection?(.gameBoost)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                 }
             }
+            .padding(4)
         }
     }
 
     private var quickDiskCard: some View {
-        GamingGlassCard(padding: 16) {
-            VStack(alignment: .leading, spacing: 12) {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    ZStack {
-                        Circle()
-                            .fill(GamingTheme.cyberCyan.opacity(0.18))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "externaldrive.fill")
-                            .foregroundStyle(GamingTheme.cyberCyan)
-                    }
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(tr("外接磁盘游戏挂载", "Custom Disk Mounts"))
-                            .font(.headline)
-                        Text(tr("重定向至外置 SSD 释放空间", "Mount to custom game dirs"))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
+                    Label(tr("外接磁盘游戏挂载", "Custom Disk Mounts"), systemImage: "externaldrive.fill")
+                        .font(.headline)
+                        .foregroundStyle(.cyan)
                     Spacer()
                 }
 
+                Text(tr("重定向游戏至外置固态释放空间", "Mount SSDs to game directories."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Divider()
+
                 HStack(spacing: 8) {
-                    Button(tr("管理磁盘", "Manage Disks")) {
+                    Button(tr("管理磁盘…", "Manage Disks…")) {
                         model.loadDisks()
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(GamingTheme.cyberCyan)
                     .controlSize(.small)
 
-                    Button(tr("恢复挂载", "Restore")) {
+                    Button(tr("恢复上次挂载", "Restore")) {
                         model.restorePreviousMounts()
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                 }
             }
+            .padding(4)
         }
     }
 
     private var quickSteamDeckCard: some View {
-        GamingGlassCard(isActive: isSteamDeckActive, padding: 16) {
-            VStack(alignment: .leading, spacing: 12) {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    ZStack {
-                        Circle()
-                            .fill(isSteamDeckActive ? GamingTheme.electricViolet.opacity(0.25) : Color.white.opacity(0.06))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "rectangle.2.swap")
-                            .foregroundStyle(isSteamDeckActive ? GamingTheme.electricViolet : .secondary)
-                    }
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(tr("SteamDeck 模式伪装", "SteamDeck Mode"))
-                            .font(.headline)
-                        Text(tr("绕过反作弊限制", "Bypass anti-cheat checks"))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
+                    Label(tr("SteamDeck 模式伪装", "SteamDeck Mode"), systemImage: "rectangle.2.swap")
+                        .font(.headline)
+                        .foregroundStyle(isSteamDeckActive ? .purple : .primary)
                     Spacer()
                 }
+
+                Text(tr("将主机名伪装为 steamdeck 绕过反作弊", "Spoof hostname to bypass checks."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Divider()
 
                 HStack(spacing: 8) {
                     Button(isSteamDeckActive ? tr("恢复主机名", "Restore") : tr("开启伪装", "Enable")) {
                         model.toggleSteamDeck()
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(isSteamDeckActive ? GamingTheme.coralRed : GamingTheme.electricViolet)
+                    .tint(isSteamDeckActive ? .red : .purple)
                     .controlSize(.small)
 
-                    Button(tr("详情", "Details")) {
-                        onNavigateToSection?(4) // Navigate to System tab
+                    Button(tr("详情…", "Details…")) {
+                        onNavigateToSection?(.system)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                 }
             }
+            .padding(4)
         }
     }
 
     private var quickHoYoBanner: some View {
-        GamingGlassCard(cornerRadius: 14, padding: 14) {
+        GroupBox {
             HStack(spacing: 12) {
                 Image(systemName: "gamecontroller.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(GamingTheme.electricViolet)
+                    .font(.title2)
+                    .foregroundStyle(.purple)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(tr("HoYoGames 启动帮助", "HoYoGames Launch Assistant"))
@@ -274,10 +256,11 @@ public struct OverviewSectionView: View {
                         model.startHoYoAssistant()
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(GamingTheme.electricViolet)
+                    .tint(.purple)
                     .controlSize(.small)
                 }
             }
+            .padding(4)
         }
     }
 }

@@ -6,22 +6,21 @@ import MacGameToolboxCore
 
 public struct MetalHUDSectionView: View {
     @EnvironmentObject private var model: AppModel
-    @State private var showingProcessManagerSheet = false
-    @State private var showingResetConfirm = false
-    @State private var activeTab: TunerTab = .appearance
-    @State private var showingAppPicker = false
+    @State private var selectedTab: TunerTab = .appearance
+    @State private var showingProcessNotice = true
 
     enum TunerTab: String, CaseIterable, Identifiable {
-        case appearance = "外观与布局"
-        case metrics = "监控指标"
-        case advanced = "高级与日志"
+        case appearance
+        case metrics
+        case advanced
 
         var id: String { rawValue }
-        var icon: String {
+
+        var title: String {
             switch self {
-            case .appearance: return "slider.horizontal.3"
-            case .metrics: return "chart.xyaxis.line"
-            case .advanced: return "gearshape.2.fill"
+            case .appearance: return tr("外观与布局", "Appearance & Layout")
+            case .metrics: return tr("监控指标", "Metrics")
+            case .advanced: return tr("日志与诊断", "Logging & Diagnostics")
             }
         }
     }
@@ -29,169 +28,138 @@ public struct MetalHUDSectionView: View {
     public init() {}
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 18) {
             // Header
             GamingSectionHeader(
-                icon: "gauge.with.dots.needle.67percent",
+                icon: "chart.xyaxis.line",
                 title: tr("Metal HUD 性能监视器", "Metal HUD Performance Monitor"),
-                subtitle: tr("实时帧率、GPU/CPU 负载、着色器与图形管线诊断工具", "Real-time FPS, GPU/CPU load, shaders and Metal pipeline diagnostics"),
-                accentColor: GamingTheme.neonEmerald
+                subtitle: tr("实时呈现 Metal 游戏渲染帧率、GPU/CPU 开销及管线状态", "Overlay real-time FPS, GPU/CPU execution time, and pipeline stats in Metal games."),
+                accentColor: .green
             )
 
-            // Master Control & Quick Actions Hero Card
+            // Master Toggle & Actions Card
             masterControlCard
 
-            // Process Detection & Conflict Warning Banner
-            conflictProcessCard
+            // Interference notice card
+            if showingProcessNotice {
+                interferenceNoticeCard
+            }
 
-            // Embedded Tuner Controls
-            tunerModuleCard
+            // Tuning Settings Box
+            tunerSettingsBox
 
             // Recent Apps Grid
-            recentAppsCard
-        }
-        .confirmationDialog(
-            tr("确定要重置全部 Metal HUD 配置吗？", "Reset all Metal HUD settings?"),
-            isPresented: $showingResetConfirm,
-            titleVisibility: .visible
-        ) {
-            Button(tr("重置全部配置", "Reset All"), role: .destructive) { model.resetMetalHUDOptions() }
-            Button(tr("取消", "Cancel"), role: .cancel) {}
-        } message: {
-            Text(tr("所有外观、指标、日志与高级设置将恢复为默认值。", "All appearance, metrics, logs and advanced settings will return to defaults."))
+            if !model.configuration.recentMetalHUDApps.isEmpty {
+                recentAppsBox
+            }
         }
     }
 
     // MARK: - Master Control Card
 
     private var masterControlCard: some View {
-        GamingGlassCard(isActive: model.metalHUDEnabled, padding: 18) {
-            VStack(spacing: 14) {
-                HStack(alignment: .center, spacing: 14) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(model.metalHUDEnabled ? GamingTheme.neonEmerald.opacity(0.18) : Color.white.opacity(0.06))
-                            .frame(width: 44, height: 44)
-                        Image(systemName: "gauge.with.dots.needle.67percent")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(model.metalHUDEnabled ? GamingTheme.neonEmerald : Color.secondary)
-                    }
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        HStack(spacing: 8) {
-                            Text(tr("全局 Metal HUD 注入", "Global Metal HUD Injection"))
-                                .font(.headline)
-                            LiveStatusBadge(model.metalHUDEnabled ? .active : .idle)
-                        }
-                        Text(tr("开启后，新启动的原生 Mac 游戏及 Wine / GPTK 游戏将实时渲染性能面板",
-                                "When enabled, newly launched Mac & Wine/GPTK games display the real-time HUD overlay."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    Toggle("", isOn: Binding(
+        GroupBox {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    Toggle(isOn: Binding(
                         get: { model.metalHUDEnabled },
                         set: { model.setMetalHUD($0) }
-                    ))
+                    )) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 8) {
+                                Text(tr("全局启用 Metal HUD", "Enable Metal HUD Globally"))
+                                    .font(.headline)
+                                LiveStatusBadge(model.metalHUDEnabled ? .active : .idle)
+                            }
+                            Text(tr("写入系统 MetalForceHudEnabled 键。开启后所有基于 Metal 的 3D 游戏将自动呈现 HUD 仪表盘。",
+                                    "Writes to MetalForceHudEnabled. Automatically displays the HUD overlay in Metal 3D games."))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     .toggleStyle(.switch)
-                    .labelsHidden()
                 }
 
-                Divider().opacity(0.3)
+                Divider()
 
                 HStack(spacing: 10) {
                     Button {
                         model.launchAppWithMetalHUD()
                     } label: {
-                        Label(tr("为单个 App 注入启动", "Launch App with HUD"), systemImage: "plus.app.fill")
+                        Label(tr("注入启动单个 App…", "Launch App with HUD…"), systemImage: "plus.app.fill")
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(GamingTheme.electricViolet)
-                    .controlSize(.regular)
 
                     Button {
                         model.openMetalHUDProcessManager()
                     } label: {
-                        Label(tr("排查冲突进程", "Check Processes"), systemImage: "arrow.triangle.2.circlepath")
+                        Label(tr("排查冲突进程…", "Check Interfering Processes…"), systemImage: "arrow.triangle.2.circlepath")
                     }
                     .buttonStyle(.bordered)
-                    .controlSize(.regular)
 
                     Spacer()
 
-                    Button(role: .destructive) {
-                        showingResetConfirm = true
-                    } label: {
-                        Label(tr("重置默认", "Reset"), systemImage: "arrow.counterclockwise")
+                    Button(tr("重置默认配置", "Reset Settings"), role: .destructive) {
+                        model.resetMetalHUDOptions()
                     }
                     .buttonStyle(.borderless)
-                    .foregroundStyle(.secondary)
                     .controlSize(.small)
                 }
             }
+            .padding(6)
         }
     }
 
-    // MARK: - Conflict Process Card
+    // MARK: - Interference Notice Card
 
-    private var conflictProcessCard: some View {
-        GamingGlassCard(cornerRadius: 14, padding: 14) {
-            HStack(spacing: 12) {
+    private var interferenceNoticeCard: some View {
+        GroupBox {
+            HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "info.circle.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(GamingTheme.cyberCyan)
+                    .font(.body)
+                    .foregroundStyle(.blue)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(tr("修改即时生效提醒", "Real-Time Sync Notice"))
+                    Text(tr("温馨提示：若开启后游戏内未出现 HUD", "Notice: If HUD does not appear in game"))
                         .font(.subheadline.bold())
-                    Text(tr("参数调整已实时写入系统环境。若游戏已经在运行中，请通过「排查冲突进程」关闭对应后台进程后重新启动。",
-                            "Settings are synced in real-time. If a game is already running, terminate its process and restart it."))
+                    Text(tr("1. 启动器（Steam/CrossOver/Whisky）在开启前已运行，需在下方点击“排查冲突进程”重启启动器；\n2. 纯 2D/GDI 渲染的 Windows Galgame 无法挂载 Metal 3D 钩子，DirectX 11/12 3D 游戏可正常显示。",
+                            "1. If game launchers were running before enabling, click 'Check Interfering Processes' to restart them;\n2. 2D/GDI Windows apps do not hook into Metal 3D, while DirectX 11/12 3D games work out of the box."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
                 Spacer()
-                Button(tr("快速排查", "Quick Check")) {
-                    model.openMetalHUDProcessManager()
+
+                Button {
+                    withAnimation { showingProcessNotice = false }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .controlSize(.small)
+                .buttonStyle(.plain)
             }
+            .padding(4)
         }
     }
 
-    // MARK: - Embedded Tuner Module Card
+    // MARK: - Tuner Settings Box
 
-    private var tunerModuleCard: some View {
-        GamingGlassCard(cornerRadius: 16, padding: 20) {
-            VStack(alignment: .leading, spacing: 16) {
-                // Tab picker & Preset chips
-                HStack(alignment: .center) {
-                    Picker("", selection: $activeTab) {
-                        ForEach(TunerTab.allCases) { tab in
-                            Label(tab.rawValue, systemImage: tab.icon).tag(tab)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: 320)
-
-                    Spacer()
-
-                    // Presets
-                    HStack(spacing: 6) {
-                        Text(tr("预设：", "Preset:"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        presetButton("精简", .minimal)
-                        presetButton("均衡", .balanced)
-                        presetButton("完整", .complex)
+    private var tunerSettingsBox: some View {
+        GroupBox(label: Text(tr("HUD 参数调优", "HUD Tuning Options")).font(.headline)) {
+            VStack(alignment: .leading, spacing: 14) {
+                // Segmented Tab Picker
+                Picker("", selection: $selectedTab) {
+                    ForEach(TunerTab.allCases) { tab in
+                        Text(tab.title).tag(tab)
                     }
                 }
+                .pickerStyle(.segmented)
+                .padding(.top, 4)
 
-                Divider().opacity(0.3)
+                Divider()
 
-                // Tab Content
-                switch activeTab {
+                switch selectedTab {
                 case .appearance:
                     appearanceTabContent
                 case .metrics:
@@ -200,133 +168,126 @@ public struct MetalHUDSectionView: View {
                     advancedTabContent
                 }
             }
+            .padding(6)
         }
     }
 
     // MARK: - Appearance Tab
 
     private var appearanceTabContent: some View {
-        VStack(spacing: 14) {
-            // Scale slider
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(tr("缩放比例 (Scale)", "Scale"))
-                        .font(.subheadline.bold())
-                    Text(tr("调整 HUD 在屏幕上的整体显示尺寸", "Adjust overall size of HUD on screen"))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+        VStack(spacing: 12) {
+            // Presets
+            LabeledContent(tr("快捷预设", "Presets")) {
+                HStack(spacing: 8) {
+                    presetButton(tr("精简", "Minimal"), .minimal)
+                    presetButton(tr("均衡 (默认)", "Balanced"), .balanced)
+                    presetButton(tr("完整", "Complex"), .complex)
+                    Spacer()
                 }
-                .frame(width: 170, alignment: .leading)
-
-                Slider(
-                    value: Binding(
-                        get: { model.configuration.metalHUDOptions.scale },
-                        set: { var opts = model.configuration.metalHUDOptions; opts.scale = $0; model.updateMetalHUDOptions(opts) }
-                    ),
-                    in: 0.1...1.0,
-                    step: 0.05
-                )
-
-                Text(String(format: "%.0f%%", model.configuration.metalHUDOptions.scale * 100))
-                    .font(.system(size: 13, weight: .bold, design: .monospaced))
-                    .frame(width: 50, alignment: .trailing)
             }
 
-            // Opacity slider
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(tr("不透明度 (Opacity)", "Opacity"))
-                        .font(.subheadline.bold())
-                    Text(tr("调整 HUD 背景与文本的不透明度", "Adjust HUD background opacity"))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+            Divider()
+
+            // Scale Slider
+            LabeledContent(tr("缩放比例", "Scale")) {
+                HStack(spacing: 12) {
+                    Slider(
+                        value: Binding(
+                            get: { model.configuration.metalHUDOptions.scale },
+                            set: { var opts = model.configuration.metalHUDOptions; opts.scale = $0; model.updateMetalHUDOptions(opts) }
+                        ),
+                        in: 0.1...1.0,
+                        step: 0.05
+                    )
+                    .frame(maxWidth: 240)
+
+                    Text(String(format: "%.0f%%", model.configuration.metalHUDOptions.scale * 100))
+                        .font(.callout.monospacedDigit())
+                        .frame(width: 44, alignment: .trailing)
                 }
-                .frame(width: 170, alignment: .leading)
-
-                Slider(
-                    value: Binding(
-                        get: { model.configuration.metalHUDOptions.opacity },
-                        set: { var opts = model.configuration.metalHUDOptions; opts.opacity = $0; model.updateMetalHUDOptions(opts) }
-                    ),
-                    in: 0.0...1.0,
-                    step: 0.05
-                )
-
-                Text(String(format: "%.0f%%", model.configuration.metalHUDOptions.opacity * 100))
-                    .font(.system(size: 13, weight: .bold, design: .monospaced))
-                    .frame(width: 50, alignment: .trailing)
             }
 
-            // Alignment picker
-            HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(tr("显示方位 (Alignment)", "Alignment"))
-                        .font(.subheadline.bold())
-                    Text(tr("HUD 悬浮停靠的屏幕角落位置", "Corner of the screen where HUD is pinned"))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(width: 170, alignment: .leading)
+            // Opacity Slider
+            LabeledContent(tr("不透明度", "Opacity")) {
+                HStack(spacing: 12) {
+                    Slider(
+                        value: Binding(
+                            get: { model.configuration.metalHUDOptions.opacity },
+                            set: { var opts = model.configuration.metalHUDOptions; opts.opacity = $0; model.updateMetalHUDOptions(opts) }
+                        ),
+                        in: 0.0...1.0,
+                        step: 0.05
+                    )
+                    .frame(maxWidth: 240)
 
+                    Text(String(format: "%.0f%%", model.configuration.metalHUDOptions.opacity * 100))
+                        .font(.callout.monospacedDigit())
+                        .frame(width: 44, alignment: .trailing)
+                }
+            }
+
+            // Alignment Picker
+            LabeledContent(tr("屏幕方位", "Alignment")) {
                 Picker("", selection: Binding(
                     get: { model.configuration.metalHUDOptions.alignment },
                     set: { var opts = model.configuration.metalHUDOptions; opts.alignment = $0; model.updateMetalHUDOptions(opts) }
                 )) {
+                    Text(tr("右上角 (默认)", "Top Right")).tag("topright")
                     Text(tr("左上角", "Top Left")).tag("topleft")
-                    Text(tr("右上角 (默认)", "Top Right (Default)")).tag("topright")
-                    Text(tr("左下角", "Bottom Left")).tag("bottomleft")
                     Text(tr("右下角", "Bottom Right")).tag("bottomright")
+                    Text(tr("左下角", "Bottom Left")).tag("bottomleft")
                 }
-                .pickerStyle(.menu)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: 240)
             }
         }
+    }
+
+    private func presetButton(_ title: String, _ preset: MetalHUDPreset) -> some View {
+        let isSelected = model.currentMetalHUDPreset() == preset
+        return Button(title) {
+            model.applyMetalHUDPreset(preset)
+        }
+        .buttonStyle(.bordered)
+        .tint(isSelected ? .accentColor : nil)
+        .controlSize(.small)
     }
 
     // MARK: - Metrics Tab
 
     private var metricsTabContent: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(tr("勾选需要实时监控的数据指标：", "Select metrics to display:"))
+            Text(tr("勾选需要显示的 HUD 指标项：", "Select items to display in HUD:"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 180), spacing: 8)], spacing: 8) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), spacing: 8)], spacing: 8) {
                 ForEach(MetalHUDElement.allElements, id: \.raw) { (element: MetalHUDElement) in
                     let isChecked = model.configuration.metalHUDOptions.elements.contains(element.raw)
-                    Button {
-                        var opts = model.configuration.metalHUDOptions
-                        if isChecked {
-                            opts.elements.removeAll { $0 == element.raw }
-                        } else {
-                            opts.elements.append(element.raw)
-                        }
-                        model.updateMetalHUDOptions(opts)
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: isChecked ? "checkmark.square.fill" : "square")
-                                .foregroundStyle(isChecked ? GamingTheme.neonEmerald : .secondary)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(tr(element.zh, element.en))
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(isChecked ? .primary : .secondary)
-                                Text(element.raw)
-                                    .font(.system(size: 9, design: .monospaced))
-                                    .foregroundStyle(.tertiary)
+                    Toggle(isOn: Binding(
+                        get: { isChecked },
+                        set: { checked in
+                            var opts = model.configuration.metalHUDOptions
+                            if checked {
+                                if !opts.elements.contains(element.raw) {
+                                    opts.elements.append(element.raw)
+                                }
+                            } else {
+                                opts.elements.removeAll { $0 == element.raw }
                             }
-                            Spacer()
+                            model.updateMetalHUDOptions(opts)
                         }
-                        .padding(8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(isChecked ? GamingTheme.neonEmerald.opacity(0.1) : Color.white.opacity(0.03))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .strokeBorder(isChecked ? GamingTheme.neonEmerald.opacity(0.3) : Color.white.opacity(0.06), lineWidth: 0.5)
-                        )
+                    )) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(tr(element.zh, element.en))
+                                .font(.subheadline)
+                            Text(element.raw)
+                                .font(.caption2.monospaced())
+                                .foregroundStyle(.tertiary)
+                        }
                     }
-                    .buttonStyle(.plain)
+                    .toggleStyle(.checkbox)
+                    .padding(6)
+                    .background(Color(nsColor: .controlBackgroundColor).opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
                 }
             }
         }
@@ -357,82 +318,51 @@ public struct MetalHUDSectionView: View {
                 } label: {
                     Label(tr("导出最近 10 分钟 Metal HUD 日志", "Export Metal HUD Logs"), systemImage: "square.and.arrow.up")
                 }
-                .controlSize(.small)
+                .controlSize(.regular)
             }
             .padding(.top, 4)
         }
         .font(.subheadline)
     }
 
-    // MARK: - Recent Apps Card
+    // MARK: - Recent Apps Box
 
-    private var recentAppsCard: some View {
-        GamingGlassCard(cornerRadius: 16, padding: 18) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text(tr("最近使用 Metal HUD 启动的 App", "Recent Metal HUD Apps"))
-                        .font(.headline)
-                    Spacer()
-                    if !model.configuration.recentMetalHUDApps.isEmpty {
-                        Text(tr("\(model.configuration.recentMetalHUDApps.count) 个记录", "\(model.configuration.recentMetalHUDApps.count) apps"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+    private var recentAppsBox: some View {
+        GroupBox(label: Text(tr("快捷启动游戏", "Quick Launch Games")).font(.headline)) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(model.configuration.recentMetalHUDApps) { app in
+                        recentAppTile(app)
                     }
                 }
-
-                if model.configuration.recentMetalHUDApps.isEmpty {
-                    HStack {
-                        Spacer()
-                        VStack(spacing: 8) {
-                            Image(systemName: "gamecontroller")
-                                .font(.system(size: 28))
-                                .foregroundStyle(.secondary)
-                            Text(tr("暂无记录，点击上方「为单个 App 注入启动」即可快速录入", "No recent apps. Click 'Launch App with HUD' above."))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 16)
-                        Spacer()
-                    }
-                } else {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 12)], spacing: 12) {
-                        ForEach(model.configuration.recentMetalHUDApps) { app in
-                            Button {
-                                model.launchRecordedAppWithMetalHUD(app.path)
-                            } label: {
-                                VStack(spacing: 6) {
-                                    Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 48, height: 48)
-                                    Text(app.displayName)
-                                        .font(.caption2)
-                                        .lineLimit(1)
-                                        .truncationMode(.middle)
-                                }
-                                .padding(8)
-                                .frame(maxWidth: .infinity)
-                                .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
-                            }
-                            .buttonStyle(.plain)
-                            .contextMenu {
-                                Button(tr("使用 Metal HUD 启动", "Launch with Metal HUD")) { model.launchRecordedAppWithMetalHUD(app.path) }
-                                Button(tr("从列表中移除", "Remove"), role: .destructive) { model.removeRecentMetalHUDApp(app) }
-                            }
-                        }
-                    }
-                }
+                .padding(6)
             }
         }
     }
 
-    private func presetButton(_ title: String, _ preset: MetalHUDPreset) -> some View {
-        let isSelected = model.currentMetalHUDPreset() == preset
-        return Button(title) {
-            model.applyMetalHUDPreset(preset)
+    private func recentAppTile(_ app: RecentMetalHUDApp) -> some View {
+        VStack(spacing: 6) {
+            Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
+                .resizable()
+                .frame(width: 44, height: 44)
+
+            Text(app.displayName)
+                .font(.caption)
+                .lineLimit(1)
+                .frame(width: 90)
+
+            Button(tr("启动", "Launch")) {
+                model.launchRecordedAppWithMetalHUD(app.path)
+            }
+            .controlSize(.small)
+            .buttonStyle(.borderedProminent)
         }
-        .controlSize(.small)
-        .buttonStyle(.bordered)
-        .tint(isSelected ? GamingTheme.cyberCyan : nil)
+        .padding(8)
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.4), in: RoundedRectangle(cornerRadius: 8))
+        .contextMenu {
+            Button(tr("移出列表", "Remove from list"), role: .destructive) {
+                model.removeRecentMetalHUDApp(app)
+            }
+        }
     }
 }

@@ -6,57 +6,7 @@ import MacGameToolboxCore
 
 public struct SidebarLayoutView: View {
     @EnvironmentObject private var model: AppModel
-    @State private var selectedNavIndex: Int = 0
-
-    enum NavItem: Int, CaseIterable, Identifiable {
-        case overview = 0
-        case metalHUD = 1
-        case gameBoost = 2
-        case storage = 3
-        case system = 4
-
-        var id: Int { rawValue }
-
-        var titleZh: String {
-            switch self {
-            case .overview: return "概览与状态"
-            case .metalHUD: return "Metal HUD 调优"
-            case .gameBoost: return "游戏加速与启动"
-            case .storage: return "存储与磁盘"
-            case .system: return "系统与设置"
-            }
-        }
-
-        var titleEn: String {
-            switch self {
-            case .overview: return "Overview"
-            case .metalHUD: return "Metal HUD Tuner"
-            case .gameBoost: return "Game Boost"
-            case .storage: return "Storage & Disks"
-            case .system: return "System & Tools"
-            }
-        }
-
-        var iconName: String {
-            switch self {
-            case .overview: return "square.grid.2x2.fill"
-            case .metalHUD: return "gauge.with.dots.needle.67percent"
-            case .gameBoost: return "bolt.fill"
-            case .storage: return "externaldrive.fill"
-            case .system: return "gearshape.2.fill"
-            }
-        }
-
-        var accentColor: Color {
-            switch self {
-            case .overview: return GamingTheme.neonEmerald
-            case .metalHUD: return GamingTheme.neonEmerald
-            case .gameBoost: return GamingTheme.cyberCyan
-            case .storage: return GamingTheme.cyberCyan
-            case .system: return GamingTheme.electricViolet
-            }
-        }
-    }
+    @State private var selectedCategory: NavigationCategory = .overview
 
     public init() {}
 
@@ -67,11 +17,10 @@ public struct SidebarLayoutView: View {
                 .frame(width: 220)
                 .background(
                     VisualEffectBlur(material: .sidebar, blendingMode: .behindWindow)
-                        .overlay(Color.black.opacity(0.2))
                 )
                 .overlay(
                     Rectangle()
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.gray.opacity(0.15))
                         .frame(width: 0.5),
                     alignment: .trailing
                 )
@@ -80,14 +29,13 @@ public struct SidebarLayoutView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     contentView
-                        .transition(.opacity.combined(with: .scale(scale: 0.99)))
+                        .transition(.opacity)
                 }
-                .padding(.horizontal, 32)
-                .padding(.vertical, 28)
+                .padding(24)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .animation(.easeInOut(duration: 0.22), value: selectedNavIndex)
+            .animation(.easeInOut(duration: 0.2), value: selectedCategory)
         }
     }
 
@@ -98,13 +46,13 @@ public struct SidebarLayoutView: View {
             // App Branding Title in Sidebar
             HStack(spacing: 10) {
                 Image(systemName: "gamecontroller.fill")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(GamingTheme.gradientCyanEmerald)
+                    .font(.title2.bold())
+                    .foregroundStyle(Color.accentColor)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(tr("Mac游戏工具箱", "Mac Gaming"))
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.headline)
                     Text("Toolbox v3.0")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.caption2.monospaced())
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -113,11 +61,11 @@ public struct SidebarLayoutView: View {
             .padding(.top, 20)
             .padding(.bottom, 12)
 
-            Divider().opacity(0.3).padding(.horizontal, 14)
+            Divider().padding(.horizontal, 14)
 
             // Navigation Items
             VStack(spacing: 4) {
-                ForEach(NavItem.allCases) { item in
+                ForEach(NavigationCategory.allCases) { item in
                     sidebarItemRow(item)
                 }
             }
@@ -131,17 +79,17 @@ public struct SidebarLayoutView: View {
         }
     }
 
-    private func sidebarItemRow(_ item: NavItem) -> some View {
-        let isSelected = selectedNavIndex == item.rawValue
+    private func sidebarItemRow(_ item: NavigationCategory) -> some View {
+        let isSelected = selectedCategory == item
         return Button {
             withAnimation(.easeInOut(duration: 0.2)) {
-                selectedNavIndex = item.rawValue
+                selectedCategory = item
             }
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: item.iconName)
                     .font(.system(size: 15, weight: isSelected ? .bold : .medium))
-                    .foregroundStyle(isSelected ? item.accentColor : .secondary)
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
                     .frame(width: 22)
 
                 Text(tr(item.titleZh, item.titleEn))
@@ -152,23 +100,19 @@ public struct SidebarLayoutView: View {
 
                 if item == .metalHUD && model.metalHUDEnabled {
                     Circle()
-                        .fill(GamingTheme.neonEmerald)
+                        .fill(Color.green)
                         .frame(width: 6, height: 6)
                 } else if item == .system && model.configuration.hostnameBackup != nil {
                     Circle()
-                        .fill(GamingTheme.electricViolet)
+                        .fill(Color.purple)
                         .frame(width: 6, height: 6)
                 }
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 9)
+            .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(isSelected ? item.accentColor.opacity(0.15) : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(isSelected ? item.accentColor.opacity(0.3) : Color.clear, lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
             )
             .contentShape(Rectangle())
         }
@@ -182,8 +126,8 @@ public struct SidebarLayoutView: View {
         }
         .padding(8)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(0.04))
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.5))
         )
     }
 
@@ -191,21 +135,19 @@ public struct SidebarLayoutView: View {
 
     @ViewBuilder
     private var contentView: some View {
-        switch selectedNavIndex {
-        case 0:
-            OverviewSectionView { targetIndex in
-                withAnimation { selectedNavIndex = targetIndex }
+        switch selectedCategory {
+        case .overview:
+            OverviewSectionView { target in
+                withAnimation { selectedCategory = target }
             }
-        case 1:
+        case .metalHUD:
             MetalHUDSectionView()
-        case 2:
+        case .gameBoost:
             GameBoostSectionView()
-        case 3:
+        case .storage:
             StorageSectionView()
-        case 4:
+        case .system:
             SystemSectionView()
-        default:
-            OverviewSectionView()
         }
     }
 }
