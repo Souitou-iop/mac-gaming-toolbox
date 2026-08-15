@@ -59,6 +59,9 @@ final class AppModel: ObservableObject {
             do { configuration = try await configurationStore.load() }
             catch { report(error) }
             metalHUDEnabled = await gamingService.metalHUDEnabled()
+            if metalHUDEnabled {
+                try? await gamingService.setMetalHUD(enabled: true, options: configuration.metalHUDOptions)
+            }
             if (try? String(contentsOfFile: "/etc/hosts", encoding: .utf8))?.contains("# BEGIN MAC GAME TOOLBOX HOYO") == true {
                 await gamingService.cleanStaleHoYoEntries()
             }
@@ -101,6 +104,11 @@ final class AppModel: ObservableObject {
     func updateMetalHUDOptions(_ options: MetalHUDOptions) {
         configuration.metalHUDOptions = options
         saveConfiguration()
+        if metalHUDEnabled {
+            Task {
+                try? await gamingService.setMetalHUD(enabled: true, options: options)
+            }
+        }
     }
 
     func applyMetalHUDPreset(_ preset: MetalHUDPreset) {
@@ -155,8 +163,7 @@ final class AppModel: ObservableObject {
     }
 
     func resetMetalHUDOptions() {
-        configuration.metalHUDOptions = MetalHUDOptions()
-        saveConfiguration()
+        updateMetalHUDOptions(MetalHUDOptions())
         setTransientStatus(.succeeded, message: tr("已重置 Metal HUD 配置", "Metal HUD settings reset"))
     }
 

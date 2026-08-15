@@ -71,3 +71,6 @@ signing-config*
 # 本项目不公开的历史脚本
 /Mac游戏辅助工具3.1.0.command
 /Disk_Setup_V2.7.1.scpt.backup
+
+# IDE
+.trae/

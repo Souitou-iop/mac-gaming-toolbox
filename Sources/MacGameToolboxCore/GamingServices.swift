@@ -104,13 +104,23 @@ public actor GamingService {
     public func setMetalHUD(enabled: Bool, options: MetalHUDOptions = MetalHUDOptions()) async throws {
         if enabled {
             _ = try await runner.run("/bin/launchctl", arguments: ["setenv", "MTL_HUD_ENABLED", "1"])
-            for arg in Self.metalHUDEnvArgs(for: options) {
+            _ = try? await runner.run("/usr/bin/defaults", arguments: ["write", "-g", "MetalForceHudEnabled", "-bool", "YES"])
+            let envArgs = Self.metalHUDEnvArgs(for: options)
+            let setKeys = Set(envArgs.compactMap { arg -> String? in
+                guard let equals = arg.firstIndex(of: "=") else { return nil }
+                return String(arg[..<equals])
+            })
+            for key in Self.allMetalHUDEnvKeys where key != "MTL_HUD_ENABLED" && !setKeys.contains(key) {
+                _ = try? await runner.run("/bin/launchctl", arguments: ["unsetenv", key])
+            }
+            for arg in envArgs {
                 guard let equals = arg.firstIndex(of: "=") else { continue }
                 let key = String(arg[..<equals])
                 let value = String(arg[arg.index(after: equals)...])
                 _ = try await runner.run("/bin/launchctl", arguments: ["setenv", key, value])
             }
         } else {
+            _ = try? await runner.run("/usr/bin/defaults", arguments: ["delete", "-g", "MetalForceHudEnabled"])
             for key in Self.allMetalHUDEnvKeys {
                 _ = try? await runner.run("/bin/launchctl", arguments: ["unsetenv", key])
             }

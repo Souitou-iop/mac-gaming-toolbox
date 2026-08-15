@@ -373,6 +373,41 @@ actor RecordingCommandRunner: CommandRunning {
     #expect(calls.first?.1 == ["-a", application.path, "--env", "MTL_HUD_ENABLED=1"])
 }
 
+@Test func globalSetMetalHUDClearsUnusedKeysAndSetsSpecifiedOptions() async throws {
+    let runner = RecordingCommandRunner()
+    let service = GamingService(runner: runner, privileged: RecordingPrivilegedOperator())
+    let options = MetalHUDOptions(
+        opacity: 0.8,
+        scale: 0.3,
+        alignment: "topleft",
+        elements: ["fps", "gputime"]
+    )
+    try await service.setMetalHUD(enabled: true, options: options)
+
+    let calls = await runner.calls
+    #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["setenv", "MTL_HUD_ENABLED", "1"] }))
+    #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["setenv", "MTL_HUD_OPACITY", "0.8"] }))
+    #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["setenv", "MTL_HUD_SCALE", "0.3"] }))
+    #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["setenv", "MTL_HUD_ALIGNMENT", "topleft"] }))
+    #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["setenv", "MTL_HUD_ELEMENTS", "fps,gputime"] }))
+    // Keys not specified should be unset
+    #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["unsetenv", "MTL_HUD_POSITION_X"] }))
+    #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["unsetenv", "MTL_HUD_LOG_ENABLED"] }))
+}
+
+@Test func globalSetMetalHUDDisabledUnsetsAllKeys() async throws {
+    let runner = RecordingCommandRunner()
+    let service = GamingService(runner: runner, privileged: RecordingPrivilegedOperator())
+    try await service.setMetalHUD(enabled: false)
+
+    let calls = await runner.calls
+    #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["unsetenv", "MTL_HUD_ENABLED"] }))
+    #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["unsetenv", "MTL_HUD_OPACITY"] }))
+    #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["unsetenv", "MTL_HUD_SCALE"] }))
+    #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["unsetenv", "MTL_HUD_ALIGNMENT"] }))
+    #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["unsetenv", "MTL_HUD_ELEMENTS"] }))
+}
+
 actor HostnameRunner: CommandRunning {
     func run(_ executable: String, arguments: [String]) async throws -> CommandResult {
         switch arguments.last {

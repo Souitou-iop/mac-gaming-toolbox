@@ -4,12 +4,14 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DERIVED_DATA="${DERIVED_DATA:-$ROOT/build/DerivedData}"
 
+ARCHS="${ARCHS:-arm64}"
+
 xcodebuild \
   -project "$ROOT/Mac游戏工具箱.xcodeproj" \
   -scheme "Mac游戏工具箱" \
   -configuration Release \
   -derivedDataPath "$DERIVED_DATA" \
-  ARCHS="arm64 x86_64" \
+  ARCHS="$ARCHS" \
   ONLY_ACTIVE_ARCH=NO \
   CODE_SIGNING_ALLOWED=NO \
   build
