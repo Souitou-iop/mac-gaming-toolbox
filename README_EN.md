@@ -22,6 +22,15 @@ We extend our sincere gratitude and highest respect to the original author, **�
 
 ---
 
+## 🖼️ Screenshots & Preview
+
+<p align="center">
+  <img src="docs/screenshots/en/overview.png" alt="Overview Dashboard" width="49%" />
+  <img src="docs/screenshots/en/metal_hud.png" alt="Metal HUD Tuner" width="49%" />
+</p>
+
+---
+
 ## 🚀 Key Enhancements in this Fork Edition
 
 While preserving all core capabilities of the upstream utility, this fork introduces extensive architectural, performance, and user experience enhancements tailored for modern macOS and Apple Silicon:

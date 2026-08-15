@@ -22,6 +22,15 @@
 
 ---
 
+## 🖼️ スクリーンショット (Screenshots)
+
+<p align="center">
+  <img src="docs/screenshots/ja/overview.png" alt="概要とステータス" width="49%" />
+  <img src="docs/screenshots/ja/metal_hud.png" alt="Metal HUD 設定" width="49%" />
+</p>
+
+---
+
 ## 🚀 本フォーク版の強化・拡張機能 (Fork Enhancements)
 
 本フォーク版では、元の利便性をそのままに、macOS ネイティブの操作性、詳細な Metal パフォーマンス測定、セーブデータ保全、多言語対応などを大幅に強化しています：

@@ -22,6 +22,15 @@
 
 ---
 
+## 🖼️ 界面预览 (Screenshots)
+
+<p align="center">
+  <img src="docs/screenshots/zh/overview.png" alt="概览与状态看板" width="49%" />
+  <img src="docs/screenshots/zh/metal_hud.png" alt="Metal HUD 深度调优" width="49%" />
+</p>
+
+---
+
 ## 🚀 相比原版的增强与重构功能 (Fork Enhancements)
 
 本分支在保持原版核心功能的基础上，针对界面交互、游戏性能监视、容器存档管理、运行稳定性与现代 macOS 体验进行了全方位的大幅增强：
