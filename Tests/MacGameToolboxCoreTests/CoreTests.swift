@@ -408,6 +408,74 @@ actor RecordingCommandRunner: CommandRunning {
     #expect(calls.contains(where: { $0.0 == "/bin/launchctl" && $0.1 == ["unsetenv", "MTL_HUD_ELEMENTS"] }))
 }
 
+@Test func identifyInterferingProcessesCategorizesLaunchersAndWineAndGames() {
+    let processes = [
+        SystemProcess(pid: 100, parentPID: 1, command: "/Applications/Steam.app/Contents/MacOS/steam_osx"),
+        SystemProcess(pid: 101, parentPID: 1, command: "/Applications/CrossOver.app/Contents/MacOS/CrossOver"),
+        SystemProcess(pid: 102, parentPID: 1, command: "/Applications/Whisky.app/Contents/MacOS/Whisky"),
+        SystemProcess(pid: 103, parentPID: 1, command: "/Applications/Heroic.app/Contents/MacOS/Heroic"),
+        SystemProcess(pid: 200, parentPID: 101, command: "/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wineserver -p"),
+        SystemProcess(pid: 201, parentPID: 200, command: "C:\\windows\\system32\\winedevice.exe"),
+        SystemProcess(pid: 300, parentPID: 100, command: "/Users/demo/Library/Application Support/Steam/steamapps/common/MiSide/MiSide.exe"),
+        SystemProcess(pid: 400, parentPID: 1, command: "/Applications/Hades.app/Contents/MacOS/Hades"),
+        SystemProcess(pid: 999, parentPID: 1, command: "/Applications/Xcode.app/Contents/MacOS/Xcode"),
+        SystemProcess(pid: 998, parentPID: 1, command: "/System/Library/CoreServices/Finder.app/Contents/MacOS/Finder"),
+        SystemProcess(pid: 997, parentPID: 1, command: "/usr/bin/login")
+    ]
+
+    let results = GamingService.identifyInterferingProcesses(processes, recentAppPaths: ["/Applications/Hades.app"])
+
+    let steam = results.first { $0.pid == 100 }
+    #expect(steam?.name == "Steam")
+    #expect(steam?.category == .launcher)
+
+    let crossover = results.first { $0.pid == 101 }
+    #expect(crossover?.name == "CrossOver")
+    #expect(crossover?.category == .launcher)
+
+    let whisky = results.first { $0.pid == 102 }
+    #expect(whisky?.name == "Whisky")
+    #expect(whisky?.category == .launcher)
+
+    let heroic = results.first { $0.pid == 103 }
+    #expect(heroic?.name == "Heroic Games Launcher")
+    #expect(heroic?.category == .launcher)
+
+    let wineserver = results.first { $0.pid == 200 }
+    #expect(wineserver?.category == .wineRuntime)
+
+    let winedevice = results.first { $0.pid == 201 }
+    #expect(winedevice?.category == .wineRuntime)
+
+    let miside = results.first { $0.pid == 300 }
+    #expect(miside?.category == .gameOrApp)
+
+    let hades = results.first { $0.pid == 400 }
+    #expect(hades?.category == .gameOrApp)
+
+    // System and Dev tools should be excluded
+    let pids = Set(results.map(\.pid))
+    #expect(!pids.contains(999))
+    #expect(!pids.contains(998))
+    #expect(!pids.contains(997))
+}
+
+@Test func terminateProcessesSendsSignalsViaRunner() async throws {
+    let runner = RecordingCommandRunner()
+    let service = GamingService(runner: runner, privileged: RecordingPrivilegedOperator())
+
+    let result = await service.terminateProcesses(pids: [1234, 5678], force: false)
+    #expect(result.succeeded == [1234, 5678])
+
+    let calls = await runner.calls
+    #expect(calls.contains(where: { $0.0 == "/bin/kill" && $0.1 == ["-15", "1234"] }))
+    #expect(calls.contains(where: { $0.0 == "/bin/kill" && $0.1 == ["-15", "5678"] }))
+
+    _ = await service.terminateProcess(pid: 9999, force: true)
+    let updatedCalls = await runner.calls
+    #expect(updatedCalls.contains(where: { $0.0 == "/bin/kill" && $0.1 == ["-9", "9999"] }))
+}
+
 actor HostnameRunner: CommandRunning {
     func run(_ executable: String, arguments: [String]) async throws -> CommandResult {
         switch arguments.last {

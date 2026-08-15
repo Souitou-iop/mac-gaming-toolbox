@@ -28,6 +28,11 @@ final class AppModel: ObservableObject {
     @Published var showingProcessSelection = false
     @Published var runningProcesses: [SystemProcess] = []
     @Published var selectedProcessIDs = Set<Int32>()
+    @Published var showingMetalHUDProcessManager = false
+    @Published var interferingProcesses: [MetalHUDProcess] = []
+    @Published var selectedInterferingPIDs = Set<Int32>()
+    @Published var isScanningInterferingProcesses = false
+    @Published var isTerminatingInterferingProcesses = false
 
     private let privileged = PrivilegedHelperClient()
     private let configurationStore: ConfigurationStore
@@ -253,6 +258,55 @@ final class AppModel: ObservableObject {
     func removeRecentMetalHUDApp(_ app: RecentMetalHUDApp) {
         configuration.recentMetalHUDApps.removeAll { $0.path == app.path }
         saveConfiguration()
+    }
+
+    func openMetalHUDProcessManager() {
+        showingMetalHUDProcessManager = true
+        scanInterferingProcesses()
+    }
+
+    func scanInterferingProcesses() {
+        isScanningInterferingProcesses = true
+        let recentPaths = configuration.recentMetalHUDApps.map(\.path)
+        Task { @MainActor in
+            do {
+                let detected = try await gamingService.detectMetalHUDInterferingProcesses(recentAppPaths: recentPaths)
+                self.interferingProcesses = detected
+                self.selectedInterferingPIDs = Set(detected.map(\.pid))
+            } catch {
+                self.interferingProcesses = []
+                self.selectedInterferingPIDs.removeAll()
+            }
+            self.isScanningInterferingProcesses = false
+        }
+    }
+
+    func terminateSelectedInterferingProcesses(force: Bool = false) {
+        let pidsToTerminate = Array(selectedInterferingPIDs)
+        guard !pidsToTerminate.isEmpty else { return }
+        isTerminatingInterferingProcesses = true
+        runTask(tr("正在关闭所选进程…", "Terminating selected processes…")) {
+            let result = await self.gamingService.terminateProcesses(pids: pidsToTerminate, force: force)
+            self.scanInterferingProcesses()
+            self.isTerminatingInterferingProcesses = false
+            if result.failed.isEmpty {
+                return tr("已成功关闭 \(result.succeeded.count) 个进程", "Successfully closed \(result.succeeded.count) process(es)")
+            } else {
+                return tr("已关闭 \(result.succeeded.count) 个进程，\(result.failed.count) 个进程未能关闭", "Closed \(result.succeeded.count) process(es), \(result.failed.count) failed")
+            }
+        }
+    }
+
+    func terminateSingleInterferingProcess(_ process: MetalHUDProcess, force: Bool = false) {
+        runTask(tr("正在关闭 \(process.name)…", "Closing \(process.name)…")) {
+            let ok = await self.gamingService.terminateProcess(pid: process.pid, force: force)
+            self.scanInterferingProcesses()
+            if ok {
+                return tr("已关闭 \(process.name)", "Closed \(process.name)")
+            } else {
+                throw ToolboxError.commandFailed(tr("关闭 \(process.name) 失败", "Failed to close \(process.name)"))
+            }
+        }
     }
 
     func increaseCrossOverPriority() {

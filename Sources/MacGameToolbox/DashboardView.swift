@@ -48,6 +48,7 @@ struct DashboardView: View {
         .sheet(isPresented: $model.showingChangelog) { ChangelogView() }
         .sheet(isPresented: $model.showingTutorials) { TutorialsView() }
         .sheet(isPresented: $model.showingProcessSelection) { ProcessSelectionView().environmentObject(model) }
+        .sheet(isPresented: $model.showingMetalHUDProcessManager) { MetalHUDProcessManagerView().environmentObject(model) }
         .sheet(isPresented: $showingMetalHUDTuner) { MetalHUDTunerView().environmentObject(model) }
         .alert(cacheAlertTitle, isPresented: $model.showingCacheConfirmation) {
             Button(tr("取消", "Cancel"), role: .cancel) {}
@@ -129,9 +130,10 @@ struct DashboardView: View {
 
     @ViewBuilder private var featureCards: some View {
         FeatureCard(icon: "gauge.with.dots.needle.67percent", title: tr("MetalHUD 性能监视器", "MetalHUD Performance Monitor"), subtitle: tr("开发者工具，可以查看游戏帧率等信息，也可以帮助你找到游戏异常的原因", "A developer tool for viewing game frame rates and diagnosing game issues")) {
-            HStack {
+            HStack(spacing: 8) {
                 Toggle(tr("全局启用", "Enable globally"), isOn: Binding(get: { model.metalHUDEnabled }, set: { value in model.setMetalHUD(value) })).toggleStyle(.switch).fixedSize(horizontal: true, vertical: false)
                 Spacer()
+                Button(tr("进程排查", "Processes")) { model.openMetalHUDProcessManager() }
                 Button(tr("调节", "Tune")) { showingMetalHUDTuner = true }
                 Button(tr("对单个 App 启用", "Enable for one app")) {
                     if model.configuration.recentMetalHUDApps.isEmpty {
@@ -463,13 +465,17 @@ private struct MetalHUDTunerView: View {
                 .padding(.bottom, 4)
                 .padding(.horizontal, 28)
             }
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Image(systemName: "arrow.triangle.2.circlepath")
                     .foregroundStyle(.secondary)
-                Text(tr("修改将在下次使用 MetalHUD 启动应用时生效", "Changes take effect the next time you launch an app with MetalHUD"))
+                Text(tr("修改将在下次启动应用时生效", "Changes take effect next launch"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
+                Button(tr("排查运行中进程", "Check Processes")) {
+                    model.openMetalHUDProcessManager()
+                }
+                .controlSize(.small)
             }
         }
         .padding(22)
@@ -1022,6 +1028,242 @@ private struct ProcessSelectionView: View {
         }
         .padding(22)
         .frame(minWidth: 680, minHeight: 520)
+    }
+}
+
+private struct MetalHUDProcessManagerView: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+    @State private var selectedCategory: MetalHUDProcessCategory? = nil
+    @State private var forceTermination = false
+
+    private var filteredProcesses: [MetalHUDProcess] {
+        model.interferingProcesses.filter { process in
+            let matchesCategory = selectedCategory == nil || process.category == selectedCategory
+            let matchesSearch = searchText.isEmpty
+                || process.name.localizedCaseInsensitiveContains(searchText)
+                || process.command.localizedCaseInsensitiveContains(searchText)
+                || String(process.pid).contains(searchText)
+            return matchesCategory && matchesSearch
+        }
+    }
+
+    private var isAllFilteredSelected: Bool {
+        guard !filteredProcesses.isEmpty else { return false }
+        return filteredProcesses.allSatisfy { model.selectedInterferingPIDs.contains($0.pid) }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Header
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(tr("Metal HUD 进程排查与关闭", "Metal HUD Process Manager"))
+                            .font(.title2.bold())
+                        if model.isScanningInterferingProcesses {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                    }
+                    Text(tr("已在运行的游戏、平台启动器（如 Steam、CrossOver）或 Wine 服务不会自动继承新的 HUD 配置。在此关闭后重新启动即可应用新样式。",
+                            "Running games, launchers (Steam, CrossOver), or Wine services do not auto-refresh HUD config. Terminate them here and restart."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                Button(tr("重新扫描", "Rescan")) { model.scanInterferingProcesses() }
+                    .controlSize(.small)
+                Button(tr("完成", "Done")) { dismiss() }
+                    .controlSize(.small)
+            }
+
+            // Filter & Search bar
+            HStack(spacing: 10) {
+                TextField(tr("搜索进程名、PID 或路径", "Search process name, PID, or path"), text: $searchText)
+                    .textFieldStyle(.roundedBorder)
+
+                Picker(tr("分类", "Category"), selection: $selectedCategory) {
+                    Text(tr("全部分类", "All Categories")).tag(nil as MetalHUDProcessCategory?)
+                    ForEach(MetalHUDProcessCategory.allCases, id: \.self) { cat in
+                        Text(tr(cat.titleZh, cat.titleEn)).tag(cat as MetalHUDProcessCategory?)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(width: 170)
+            }
+
+            // Process List or Empty View
+            if model.isScanningInterferingProcesses && model.interferingProcesses.isEmpty {
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text(tr("正在扫描可能影响 HUD 的运行中进程…", "Scanning for interfering processes…"))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if model.interferingProcesses.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 38))
+                        .foregroundStyle(.green)
+                    Text(tr("未检测到可能会影响 Metal HUD 刷新的运行中进程", "No interfering processes detected"))
+                        .font(.headline)
+                    Text(tr("当前没有运行中的游戏启动器、Wine 服务或冲突游戏。新启动的应用将直接应用最新的 Metal HUD 样式。",
+                            "No running launchers, Wine daemons, or conflicting games. Newly launched apps will apply the latest Metal HUD style."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 400)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                VStack(spacing: 0) {
+                    // Quick select bar
+                    HStack {
+                        Button(isAllFilteredSelected ? tr("取消全选", "Deselect All") : tr("全选当前", "Select All")) {
+                            if isAllFilteredSelected {
+                                for p in filteredProcesses { model.selectedInterferingPIDs.remove(p.pid) }
+                            } else {
+                                for p in filteredProcesses { model.selectedInterferingPIDs.insert(p.pid) }
+                            }
+                        }
+                        .controlSize(.small)
+                        Spacer()
+                        Text(tr("共检测到 \(model.interferingProcesses.count) 个相关进程", "Found \(model.interferingProcesses.count) process(es)"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.bottom, 6)
+
+                    List(filteredProcesses) { process in
+                        processRow(process)
+                    }
+                    .listStyle(.inset)
+                }
+            }
+
+            // Bottom bar
+            HStack(alignment: .center, spacing: 12) {
+                Toggle(tr("强制结束 (SIGKILL)", "Force terminate (SIGKILL)"), isOn: $forceTermination)
+                    .toggleStyle(.checkbox)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Text(tr("已选 \(model.selectedInterferingPIDs.count) 个进程", "\(model.selectedInterferingPIDs.count) selected"))
+                    .font(.caption)
+                    .foregroundStyle(model.selectedInterferingPIDs.isEmpty ? .secondary : .primary)
+                    .monospacedDigit()
+
+                Button {
+                    model.terminateSelectedInterferingProcesses(force: forceTermination)
+                } label: {
+                    HStack(spacing: 4) {
+                        if model.isTerminatingInterferingProcesses {
+                            ProgressView().controlSize(.small)
+                        }
+                        Text(tr("关闭所选进程", "Terminate Selected"))
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .disabled(model.selectedInterferingPIDs.isEmpty || model.isTerminatingInterferingProcesses)
+            }
+        }
+        .padding(22)
+        .frame(minWidth: 680, minHeight: 520)
+    }
+
+    @ViewBuilder
+    private func processRow(_ process: MetalHUDProcess) -> some View {
+        let isSelected = model.selectedInterferingPIDs.contains(process.pid)
+        HStack(alignment: .center, spacing: 12) {
+            Toggle("", isOn: Binding(
+                get: { isSelected },
+                set: { selected in
+                    if selected { model.selectedInterferingPIDs.insert(process.pid) }
+                    else { model.selectedInterferingPIDs.remove(process.pid) }
+                }
+            ))
+            .labelsHidden()
+            .toggleStyle(.checkbox)
+
+            // Icon
+            processIcon(for: process)
+                .frame(width: 32, height: 32)
+
+            // Details
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 8) {
+                    Text(process.name)
+                        .font(.headline)
+
+                    categoryBadge(process.category)
+
+                    Text("PID \(process.pid)")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+
+                Text(tr(process.reasonZh, process.reasonEn))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text(process.command)
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+
+            Spacer()
+
+            Button(tr("关闭", "Close")) {
+                model.terminateSingleInterferingProcess(process, force: forceTermination)
+            }
+            .controlSize(.small)
+            .buttonStyle(.bordered)
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func categoryBadge(_ category: MetalHUDProcessCategory) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: category.iconName)
+                .font(.system(size: 9))
+            Text(tr(category.titleZh, category.titleEn))
+                .font(.caption2)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(categoryBadgeColor(category).opacity(0.12), in: Capsule())
+        .foregroundStyle(categoryBadgeColor(category))
+    }
+
+    private func categoryBadgeColor(_ category: MetalHUDProcessCategory) -> Color {
+        switch category {
+        case .launcher: return .blue
+        case .wineRuntime: return .orange
+        case .gameOrApp: return .purple
+        }
+    }
+
+    @ViewBuilder
+    private func processIcon(for process: MetalHUDProcess) -> some View {
+        if let path = process.appBundlePath, FileManager.default.fileExists(atPath: path) {
+            let img = NSWorkspace.shared.icon(forFile: path)
+            Image(nsImage: img)
+                .resizable()
+                .scaledToFit()
+        } else {
+            Image(systemName: process.category.iconName)
+                .font(.system(size: 20))
+                .foregroundStyle(categoryBadgeColor(process.category))
+        }
     }
 }
 

@@ -82,6 +82,68 @@ public struct SystemProcess: Identifiable, Hashable, Sendable {
     }
 }
 
+public enum MetalHUDProcessCategory: String, Codable, Hashable, CaseIterable, Sendable {
+    case launcher
+    case wineRuntime
+    case gameOrApp
+
+    public var titleZh: String {
+        switch self {
+        case .launcher: return "游戏平台与启动器"
+        case .wineRuntime: return "Wine 与兼容层服务"
+        case .gameOrApp: return "运行中的游戏与应用"
+        }
+    }
+
+    public var titleEn: String {
+        switch self {
+        case .launcher: return "Game Launchers & Platforms"
+        case .wineRuntime: return "Wine & Runtime Services"
+        case .gameOrApp: return "Running Games & Apps"
+        }
+    }
+
+    public var iconName: String {
+        switch self {
+        case .launcher: return "arrow.triangle.2.circlepath.circle.fill"
+        case .wineRuntime: return "gearshape.2.fill"
+        case .gameOrApp: return "gamecontroller.fill"
+        }
+    }
+}
+
+public struct MetalHUDProcess: Identifiable, Hashable, Sendable, Codable {
+    public var id: Int32 { pid }
+    public let pid: Int32
+    public let parentPID: Int32
+    public let name: String
+    public let command: String
+    public let category: MetalHUDProcessCategory
+    public let appBundlePath: String?
+    public let reasonZh: String
+    public let reasonEn: String
+
+    public init(
+        pid: Int32,
+        parentPID: Int32,
+        name: String,
+        command: String,
+        category: MetalHUDProcessCategory,
+        appBundlePath: String? = nil,
+        reasonZh: String,
+        reasonEn: String
+    ) {
+        self.pid = pid
+        self.parentPID = parentPID
+        self.name = name
+        self.command = command
+        self.category = category
+        self.appBundlePath = appBundlePath
+        self.reasonZh = reasonZh
+        self.reasonEn = reasonEn
+    }
+}
+
 public struct RecentMetalHUDApp: Codable, Hashable, Identifiable, Sendable {
     public var path: String
     public var displayName: String

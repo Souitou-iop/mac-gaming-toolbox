@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 public enum PrivilegedOperation: Sendable, Equatable {
     case healthCheck
@@ -238,6 +239,40 @@ public actor GamingService {
         return args
     }
 
+    public func detectMetalHUDInterferingProcesses(recentAppPaths: [String] = []) async throws -> [MetalHUDProcess] {
+        let result = try await runner.run("/bin/ps", arguments: ["-axo", "pid=,ppid=,command="])
+        let processes = Self.parseProcessTable(result.outputString)
+        return Self.identifyInterferingProcesses(processes, recentAppPaths: recentAppPaths)
+    }
+
+    public func terminateProcesses(pids: [Int32], force: Bool = false) async -> (succeeded: [Int32], failed: [Int32]) {
+        var succeeded: [Int32] = []
+        var failed: [Int32] = []
+        for pid in pids {
+            let ok = await terminateProcess(pid: pid, force: force)
+            if ok {
+                succeeded.append(pid)
+            } else {
+                failed.append(pid)
+            }
+        }
+        return (succeeded, failed)
+    }
+
+    public func terminateProcess(pid: Int32, force: Bool = false) async -> Bool {
+        guard pid > 1 else { return false }
+        if let app = NSRunningApplication(processIdentifier: pid) {
+            if force {
+                _ = app.forceTerminate()
+            } else {
+                _ = app.terminate()
+            }
+        }
+        let sigArg = force ? "-9" : "-15"
+        let res = try? await runner.run("/bin/kill", arguments: [sigArg, String(pid)])
+        return res?.exitCode == 0 || NSRunningApplication(processIdentifier: pid) == nil
+    }
+
     public func wineProcesses(crossOverOnly: Bool = false) async throws -> [(pid: Int32, command: String)] {
         let result = try await runner.run("/bin/ps", arguments: ["-axo", "pid=,ppid=,command="])
         return Self.matchingProcesses(Self.parseProcessTable(result.outputString), crossOverOnly: crossOverOnly)
@@ -301,6 +336,217 @@ public actor GamingService {
             // launchd. If the CrossOver root has exited, retain Wine detection.
             return roots.isEmpty ? isWine : descendants.contains(process.pid) || (value.contains("crossover") && isWine)
         }
+    }
+
+    public static func identifyInterferingProcesses(
+        _ processes: [SystemProcess],
+        recentAppPaths: [String] = []
+    ) -> [MetalHUDProcess] {
+        let recentNormalized = Set(recentAppPaths.map { $0.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) })
+
+        let ignoredSubstrings = [
+            "macgametoolbox",
+            "/system/library/",
+            "/usr/libexec/",
+            "/usr/sbin/",
+            "/usr/bin/",
+            "windowserver",
+            "dock.app",
+            "finder.app",
+            "systemsettings.app",
+            "safari.app",
+            "google chrome.app",
+            "xcode.app",
+            "terminal.app",
+            "iterm.app",
+            "visual studio code.app",
+            "trae.app",
+            "cursor.app",
+            "antigravity"
+        ]
+
+        var results: [MetalHUDProcess] = []
+
+        for p in processes {
+            guard p.pid > 1 else { continue }
+            let cmdLower = p.command.lowercased()
+
+            if cmdLower.contains("macgametoolbox") { continue }
+            if ignoredSubstrings.contains(where: { cmdLower.contains($0) }) {
+                let isWine = cmdLower.contains("wineserver") || cmdLower.contains("wine64") || cmdLower.contains("winedevice")
+                let isKnownLauncher = cmdLower.contains("steam") || cmdLower.contains("crossover") || cmdLower.contains("whisky")
+                if !isWine && !isKnownLauncher {
+                    continue
+                }
+            }
+
+            if let wine = matchWineRuntime(p) {
+                results.append(wine)
+                continue
+            }
+
+            if let launcher = matchLauncher(p) {
+                results.append(launcher)
+                continue
+            }
+
+            if let game = matchGameOrApp(p, recentPaths: recentNormalized) {
+                results.append(game)
+                continue
+            }
+        }
+
+        return results.sorted {
+            if $0.category != $1.category {
+                return $0.category.rawValue < $1.category.rawValue
+            }
+            return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }
+    }
+
+    public static func extractAppBundlePath(from command: String) -> String? {
+        let pattern = #"(/(?:Applications|Users|Volumes)/[^\s"]+?\.app)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+              let match = regex.firstMatch(in: command, options: [], range: NSRange(location: 0, length: command.utf16.count)),
+              let range = Range(match.range(at: 1), in: command) else {
+            return nil
+        }
+        return String(command[range])
+    }
+
+    private static func matchLauncher(_ p: SystemProcess) -> MetalHUDProcess? {
+        let cmd = p.command
+        let cmdLower = cmd.lowercased()
+
+        struct LauncherPattern {
+            let matches: (String) -> Bool
+            let name: String
+            let fallbackBundle: String?
+        }
+
+        let patterns: [LauncherPattern] = [
+            LauncherPattern(matches: { $0.contains("steam.app") || $0.contains("steam_osx") || $0.hasSuffix("/steam") }, name: "Steam", fallbackBundle: "/Applications/Steam.app"),
+            LauncherPattern(matches: { $0.contains("crossover.app") || $0.contains("/crossover") || $0.contains("cxoffice") }, name: "CrossOver", fallbackBundle: "/Applications/CrossOver.app"),
+            LauncherPattern(matches: { $0.contains("whisky.app") || $0.contains("/whisky") }, name: "Whisky", fallbackBundle: "/Applications/Whisky.app"),
+            LauncherPattern(matches: { $0.contains("heroic.app") || $0.contains("/heroic") }, name: "Heroic Games Launcher", fallbackBundle: "/Applications/Heroic.app"),
+            LauncherPattern(matches: { $0.contains("battle.net.app") || $0.contains("battle.net") || $0.contains("agent.app") }, name: "Battle.net", fallbackBundle: "/Applications/Battle.net.app"),
+            LauncherPattern(matches: { $0.contains("epic games launcher.app") || $0.contains("epicgameslauncher") }, name: "Epic Games Launcher", fallbackBundle: "/Applications/Epic Games Launcher.app"),
+            LauncherPattern(matches: { $0.contains("gog galaxy.app") || $0.contains("galaxyclient") }, name: "GOG Galaxy", fallbackBundle: "/Applications/GOG Galaxy.app"),
+            LauncherPattern(matches: { $0.contains("porting kit.app") || $0.contains("portingkit") }, name: "Porting Kit", fallbackBundle: "/Applications/Porting Kit.app"),
+            LauncherPattern(matches: { $0.contains("origin.app") || $0.contains("eadesktop") }, name: "EA / Origin", fallbackBundle: "/Applications/Origin.app"),
+            LauncherPattern(matches: { $0.contains("playcover.app") }, name: "PlayCover", fallbackBundle: "/Applications/PlayCover.app"),
+            LauncherPattern(matches: { $0.contains("ryujinx.app") || $0.contains("/ryujinx") }, name: "Ryujinx", fallbackBundle: "/Applications/Ryujinx.app"),
+            LauncherPattern(matches: { $0.contains("rpcs3.app") || $0.contains("/rpcs3") }, name: "RPCS3", fallbackBundle: "/Applications/RPCS3.app"),
+            LauncherPattern(matches: { $0.contains("dolphin.app") || $0.contains("/dolphin") }, name: "Dolphin", fallbackBundle: "/Applications/Dolphin.app"),
+            LauncherPattern(matches: { $0.contains("pcsx2.app") || $0.contains("/pcsx2") }, name: "PCSX2", fallbackBundle: "/Applications/PCSX2.app")
+        ]
+
+        for pat in patterns {
+            if pat.matches(cmdLower) {
+                let bundle = extractAppBundlePath(from: cmd) ?? pat.fallbackBundle
+                return MetalHUDProcess(
+                    pid: p.pid,
+                    parentPID: p.parentPID,
+                    name: pat.name,
+                    command: p.command,
+                    category: .launcher,
+                    appBundlePath: bundle,
+                    reasonZh: "启动器常驻后台会导致从其启动的游戏子进程继承旧的环境变量，建议重启启动器。",
+                    reasonEn: "Launcher running in background causes child game processes to inherit stale environment variables."
+                )
+            }
+        }
+        return nil
+    }
+
+    private static func matchWineRuntime(_ p: SystemProcess) -> MetalHUDProcess? {
+        let cmd = p.command
+        let cmdLower = cmd.lowercased()
+
+        let wineKeywords = [
+            "wineserver", "wine64-preloader", "wine-preloader", "wine64",
+            "winedevice.exe", "winedevice", "explorer.exe", "services.exe",
+            "plugplay.exe", "conhost.exe"
+        ]
+
+        for kw in wineKeywords {
+            if cmdLower.contains(kw) {
+                let fileName = cmd.split(separator: "/").last.map(String.init) ?? kw
+                let bundle = extractAppBundlePath(from: cmd)
+                return MetalHUDProcess(
+                    pid: p.pid,
+                    parentPID: p.parentPID,
+                    name: fileName.isEmpty ? kw : fileName,
+                    command: p.command,
+                    category: .wineRuntime,
+                    appBundlePath: bundle,
+                    reasonZh: "Wine 容器与后台服务持有旧的环境状态，关闭后重启游戏可使新配置生效。",
+                    reasonEn: "Wine runtime services hold previous environment states. Closing them resets the bottle environment."
+                )
+            }
+        }
+        return nil
+    }
+
+    private static func matchGameOrApp(_ p: SystemProcess, recentPaths: Set<String>) -> MetalHUDProcess? {
+        let cmd = p.command
+        let cmdLower = cmd.lowercased()
+
+        // 1. Matches user-recorded recent MetalHUD apps
+        for path in recentPaths {
+            if !path.isEmpty && cmdLower.contains(path) {
+                let displayName = FileManager.default.displayName(atPath: path)
+                let name = (displayName as NSString).deletingPathExtension
+                return MetalHUDProcess(
+                    pid: p.pid,
+                    parentPID: p.parentPID,
+                    name: name.isEmpty ? "Game (\(p.pid))" : name,
+                    command: p.command,
+                    category: .gameOrApp,
+                    appBundlePath: path,
+                    reasonZh: "游戏在启动时已锁定 Metal 渲染配置，关闭后重新启动即可应用最新的 HUD 样式。",
+                    reasonEn: "The game locked its Metal rendering configuration on launch. Restart it to apply the new HUD style."
+                )
+            }
+        }
+
+        // 2. Matches steamapps/common or drive_c games or cxbottle
+        if cmdLower.contains("steamapps/common") || cmdLower.contains("drive_c") || cmdLower.contains("cxbottle") {
+            let bundle = extractAppBundlePath(from: cmd)
+            let rawName = bundle.flatMap { ($0 as NSString).lastPathComponent } ?? cmd.split(separator: "/").last.map(String.init) ?? "Game"
+            let name = (rawName as NSString).deletingPathExtension
+            return MetalHUDProcess(
+                pid: p.pid,
+                parentPID: p.parentPID,
+                name: name.isEmpty ? "Game (\(p.pid))" : name,
+                command: p.command,
+                category: .gameOrApp,
+                appBundlePath: bundle,
+                reasonZh: "游戏在启动时已锁定 Metal 渲染配置，关闭后重新启动即可应用最新的 HUD 样式。",
+                reasonEn: "The game locked its Metal rendering configuration on launch. Restart it to apply the new HUD style."
+            )
+        }
+
+        // 3. Check if running inside an .app under /Applications or ~/Applications
+        if let bundle = extractAppBundlePath(from: cmd) {
+            let bundleLower = bundle.lowercased()
+            if bundleLower.contains("/applications/") {
+                let rawName = (bundle as NSString).lastPathComponent
+                let name = (rawName as NSString).deletingPathExtension
+                return MetalHUDProcess(
+                    pid: p.pid,
+                    parentPID: p.parentPID,
+                    name: name.isEmpty ? "App (\(p.pid))" : name,
+                    command: p.command,
+                    category: .gameOrApp,
+                    appBundlePath: bundle,
+                    reasonZh: "应用在启动时已锁定 Metal 渲染配置，关闭后重新启动即可应用最新的 HUD 样式。",
+                    reasonEn: "The app locked its Metal rendering configuration on launch. Restart it to apply the new HUD style."
+                )
+            }
+        }
+
+        return nil
     }
 }
 
