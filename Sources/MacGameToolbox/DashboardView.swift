@@ -14,17 +14,13 @@ struct DashboardView: View {
     @State private var displayedStatus = TaskStatus()
     @State private var isStatusPanelVisible = false
 
-    private var hasCustomWallpaper: Bool { model.configuration.customWallpaperPath != nil }
-    private var effectiveColorScheme: ColorScheme { hasCustomWallpaper ? .dark : colorScheme }
-    private var useLiquidGlassUI: Bool { hasCustomWallpaper }
-
     var body: some View {
         NavigationSplitView {
             sidebarContent
         } detail: {
             detailContent
         }
-        .background(WindowAppearanceConfigurator(nativeGlassEnabled: $nativeGlassEnabled, colorScheme: effectiveColorScheme, isEnabled: useLiquidGlassUI))
+        .background(WindowAppearanceConfigurator(nativeGlassEnabled: $nativeGlassEnabled, colorScheme: colorScheme, isEnabled: false))
         .sheet(isPresented: $model.showingDiskManager) { DiskManagerView().environmentObject(model) }
         .sheet(isPresented: $model.showingChangelog) { ChangelogView() }
         .sheet(isPresented: $model.showingTutorials) { TutorialsView() }
@@ -35,31 +31,10 @@ struct DashboardView: View {
             Button(tr("取消", "Cancel"), role: .cancel) {}
             Button(model.cacheConfirmationStage == 1 ? tr("继续", "Continue") : tr("确认删除", "Delete"), role: model.configuration.excludesSensitiveCacheFiles ? nil : .destructive) { model.confirmCacheCleaning() }
         } message: { Text(cacheAlertMessage) }
-        .environment(\.colorScheme, effectiveColorScheme)
-        .environment(\.dashboardColorScheme, effectiveColorScheme)
-        .environment(\.nativeGlassEnabled, useLiquidGlassUI && nativeGlassEnabled)
-        .environment(\.usesLiquidGlassUI, useLiquidGlassUI)
-        .preferredColorScheme(useLiquidGlassUI ? .dark : nil)
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.willResignActiveNotification)) { _ in
-            guard useLiquidGlassUI else { return }
-            nativeGlassEnabled = false
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            guard useLiquidGlassUI else { return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                nativeGlassEnabled = NSApp.isActive
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.willMiniaturizeNotification)) { _ in
-            guard useLiquidGlassUI else { return }
-            nativeGlassEnabled = false
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didDeminiaturizeNotification)) { _ in
-            guard useLiquidGlassUI else { return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                nativeGlassEnabled = NSApp.isActive
-            }
-        }
+        .environment(\.colorScheme, colorScheme)
+        .environment(\.dashboardColorScheme, colorScheme)
+        .environment(\.nativeGlassEnabled, false)
+        .environment(\.usesLiquidGlassUI, false)
         .onAppear {
             MenuCommandCoordinator.shared.install(model: model)
             guard model.status.phase != .idle else { return }
@@ -106,7 +81,7 @@ struct DashboardView: View {
         .liquidGlassButtonStyle()
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .liquidGlassPanel(cornerRadius: 12, colorScheme: effectiveColorScheme, usesLiquidGlassUI: useLiquidGlassUI, nativeGlassEnabled: nativeGlassEnabled)
+        .liquidGlassPanel(cornerRadius: 12, colorScheme: colorScheme, usesLiquidGlassUI: false, nativeGlassEnabled: false)
     }
 
     @ViewBuilder private var featureCards: some View {
@@ -166,18 +141,6 @@ struct DashboardView: View {
         }
         FeatureCard(icon: "rectangle.2.swap", title: tr("切换到SteamDeck模式", "Switch to SteamDeck Mode"), subtitle: tr("部分游戏反作弊只给SteamDeck后门，伪装成SteamDeck让Mac也能玩", "Some anti-cheat systems allow SteamDeck; impersonating one may let the game run on Mac")) {
             Button(tr("切换模式", "Toggle mode")) { model.toggleSteamDeck() }
-        }
-        FeatureCard(icon: "photo.fill.on.rectangle.fill", title: tr("导入壁纸", "Import Wallpaper"), subtitle: tr("自定义工具箱背景，图片会按比例填充整个界面", "Customize the toolbox background; images fill the window without stretching")) {
-            HStack {
-                Button(model.configuration.customWallpaperPath == nil ? tr("导入壁纸", "Import wallpaper") : tr("重新导入", "Import again")) {
-                    model.importWallpaper()
-                }
-                if model.configuration.customWallpaperPath != nil {
-                    Button(tr("恢复默认", "Reset")) {
-                        model.resetWallpaper()
-                    }
-                }
-            }
         }
         FeatureCard(icon: "book.pages.fill", title: tr("教程总导航", "Tutorial Hub"), subtitle: tr("Mac 游戏与 CrossOver 教程", "Mac gaming and CrossOver tutorials")) {
             Button(tr("打开导航", "Open hub")) { model.showingTutorials = true }
@@ -277,40 +240,17 @@ struct DashboardView: View {
     }
 
     private var backgroundColors: [Color] {
-        effectiveColorScheme == .dark
+        colorScheme == .dark
             ? [GamingTheme.bgDeepDark, GamingTheme.bgSurfaceDark]
             : [Color(red: 0.94, green: 0.96, blue: 1.0), Color(red: 0.98, green: 0.94, blue: 1.0)]
     }
 
     @ViewBuilder private var background: some View {
         GeometryReader { proxy in
-            if let image = customWallpaperImage {
-                ZStack {
-                    Image(nsImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                        .clipped()
-                    LinearGradient(colors: wallpaperOverlayColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                }
-            } else {
-                LinearGradient(colors: backgroundColors, startPoint: .topLeading, endPoint: .bottomTrailing)
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-            }
+            LinearGradient(colors: backgroundColors, startPoint: .topLeading, endPoint: .bottomTrailing)
+                .frame(width: proxy.size.width, height: proxy.size.height)
         }
         .ignoresSafeArea()
-    }
-
-    private var customWallpaperImage: NSImage? {
-        guard let path = model.configuration.customWallpaperPath else { return nil }
-        return NSImage(contentsOfFile: path)
-    }
-
-    private var wallpaperOverlayColors: [Color] {
-        effectiveColorScheme == .dark
-            ? [Color.black.opacity(0.06), Color.black.opacity(0.16)]
-            : [Color.white.opacity(0.04), Color.white.opacity(0.12)]
     }
 
     private var cacheAlertTitle: String {

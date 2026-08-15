@@ -344,19 +344,13 @@ public struct CommandCenterView: View {
                 .padding(4)
             }
 
-            GroupBox(label: Label(tr("壁纸与教程", "Visuals & Guides"), systemImage: "photo.fill.on.rectangle.fill").font(.headline)) {
+            GroupBox(label: Label(tr("教程与指南", "Guides & Tutorials"), systemImage: "book.pages.fill").font(.headline)) {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(tr("自定义工具箱背景壁纸或浏览 Mac 游戏教程", "Customize background wallpaper or browse guides."))
+                    Text(tr("浏览 Mac 游戏运行、Wine 容器与 GPTK 教程", "Browse guides for Mac gaming, Wine bottles, and GPTK."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 4)
                     HStack(spacing: 8) {
-                        Button(model.configuration.customWallpaperPath == nil ? tr("导入壁纸…", "Import Wallpaper…") : tr("更换壁纸…", "Change Wallpaper…")) {
-                            model.importWallpaper()
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-
                         Button(tr("教程总导航…", "Tutorials…")) {
                             model.showingTutorials = true
                         }

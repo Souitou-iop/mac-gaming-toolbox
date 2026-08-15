@@ -23,7 +23,7 @@ public struct SystemSectionView: View {
                 accentColor: .purple
             )
 
-            // Preferences Box (Language & Wallpaper)
+            // Preferences Box (Language)
             preferencesBox
 
             // Service & Permission Health Inspector Box
@@ -48,7 +48,7 @@ public struct SystemSectionView: View {
         }
     }
 
-    // MARK: - Preferences Box (Language & Appearance)
+    // MARK: - Preferences Box (Language)
 
     private var preferencesBox: some View {
         GroupBox(label:
@@ -75,35 +75,6 @@ public struct SystemSectionView: View {
                     }
                     .pickerStyle(.menu)
                     .frame(maxWidth: 240)
-
-                    Spacer()
-                }
-
-                Divider()
-
-                // Wallpaper Customization
-                HStack(spacing: 12) {
-                    Text(tr("背景壁纸：", "Background Wallpaper:", "背景壁紙："))
-                        .font(.subheadline)
-                        .foregroundStyle(.primary)
-
-                    Button {
-                        model.importWallpaper()
-                    } label: {
-                        Label(tr("导入自定义壁纸…", "Import Wallpaper…", "壁紙をインポート…"), systemImage: "photo.badge.plus")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.regular)
-
-                    if model.configuration.customWallpaperPath != nil {
-                        Button(role: .destructive) {
-                            model.resetWallpaper()
-                        } label: {
-                            Label(tr("清除壁纸", "Remove Wallpaper", "壁紙を解除"), systemImage: "trash")
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.regular)
-                    }
 
                     Spacer()
                 }

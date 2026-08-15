@@ -48,7 +48,6 @@ final class AppModel: ObservableObject {
     private let gamingService: GamingService
     private let hostnameService: HostnameService
     private let cacheService: CacheService
-    private let wallpaperService: WallpaperService
     private let diagnosticsService = DiagnosticsService()
     private let focusBooster = GamingFocusBooster()
     private let saveFinderService = GameSaveFinderService()
@@ -64,7 +63,6 @@ final class AppModel: ObservableObject {
         gamingService = GamingService(privileged: privileged)
         hostnameService = HostnameService(privileged: privileged)
         cacheService = CacheService(privileged: privileged)
-        wallpaperService = WallpaperService()
         launch()
     }
 
@@ -520,41 +518,6 @@ final class AppModel: ObservableObject {
     func deleteDefaultPath(_ path: String) {
         configuration.defaultPaths.removeAll { $0 == path }
         saveConfiguration()
-    }
-
-    func importWallpaper() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowsMultipleSelection = false
-        panel.allowedContentTypes = [.image]
-        panel.title = tr("导入壁纸", "Import Wallpaper")
-        panel.prompt = tr("导入", "Import")
-        guard panel.runModal() == .OK, let source = panel.url else { return }
-
-        do {
-            let oldPath = configuration.customWallpaperPath
-            let destination = try wallpaperService.importWallpaper(from: source, replacing: oldPath)
-            configuration.customWallpaperPath = destination.path
-            saveConfiguration()
-            DiagnosticFileLogger.write("Custom wallpaper imported: \(destination.path)")
-            setTransientStatus(.succeeded, message: tr("已导入自定义背景", "Custom wallpaper imported"))
-        } catch {
-            report(error)
-        }
-    }
-
-    func resetWallpaper() {
-        let oldPath = configuration.customWallpaperPath
-        configuration.customWallpaperPath = nil
-        saveConfiguration()
-        do {
-            let removed = try wallpaperService.removeManagedWallpaper(at: oldPath)
-            DiagnosticFileLogger.write("Custom wallpaper cleared; removed file: \(removed)")
-        } catch {
-            DiagnosticFileLogger.write("Custom wallpaper cleared; failed to remove file: \(error.localizedDescription)")
-        }
-        setTransientStatus(.succeeded, message: tr("已恢复默认背景", "Default background restored"))
     }
 
     func prepareCacheScan() {
