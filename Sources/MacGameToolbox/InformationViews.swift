@@ -6,6 +6,17 @@ struct ChangelogView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("3.1.0") {
+                    Text(tr("【UI 重构】全面采用 macOS 原生 NavigationSplitView 侧边栏架构与标准控件，告别多层嵌套弹窗", "Refactored UI to pure native NavigationSplitView sidebar and standard controls"))
+                    Text(tr("【Metal HUD 进阶】支持 10%~100% 缩放、透明度、四角方位、23 项指标（带数值单位）与单应用专属方案绑定", "Added custom scale, opacity, alignment, 23 metrics with unit examples, and per-app HUD profiles"))
+                    Text(tr("【性能诊断快照】支持一键生成结构化 Markdown 性能诊断报告，方便社区反馈与硬件评估", "Added 1-click Markdown performance diagnostic snapshot report exporter"))
+                    Text(tr("【进程排查与重启】智能排查先于 HUD 启动的冲突进程（Steam、CrossOver、Wine），支持用户自主勾选安全重启", "Added interfering process inspector with user-selected safe restarts for reliable HUD injection"))
+                    Text(tr("【存档管理】自动扫描 CrossOver、Whisky、Wine 容器深层存档（AppData、Saved Games），支持一键定位与 Zip 备份", "Added Windows Game Save Finder & 1-click Zip backup for CrossOver and Whisky bottles"))
+                    Text(tr("【游戏专注模式】内置原生 Caffeinate 守护进程，游戏与着色器编译期间全程防休眠、防息屏与防降频", "Added Caffeinate Gaming Focus Mode to prevent sleep, screen dimming, and throttling"))
+                    Text(tr("【服务状态体检】新增软件服务与权限状态检测器，支持一键自动修复与历史残留服务清理", "Added Software Service & Permission Health Inspector with 1-click repair and legacy cleanup"))
+                    Text(tr("【辅助服务精简】辅助服务标识符精简为 macgametoolbox.helper，系统后台活动正确显示 App 图标", "Streamlined helper to macgametoolbox.helper and bound native app icon in Login Items & Extensions"))
+                    Text(tr("【纯 ARM64 分发】全面迁移至 Apple Silicon 纯原生构建，发布包统一采用无损 Zip 格式分发", "Optimized exclusively for Apple Silicon ARM64 with lightweight Zip archive distribution"))
+                }
                 Section("3.0.7") {
                     Text(tr("HoYoGames 启动帮助部分功能修复", "Fixed parts of the HoYoGames Launch Assistant"))
                 }

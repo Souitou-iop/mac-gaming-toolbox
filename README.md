@@ -1,76 +1,78 @@
-# Mac 游戏工具箱
+# Mac 游戏工具箱 (Mac Gaming Toolbox)
 
 [简体中文](README.md) | [English](README_EN.md)
 
-Mac 游戏工具箱是一款原生 SwiftUI macOS 应用，用于集中管理常见的 Mac 游戏辅助操作。当前版本为 3.0.7，支持中文与英文界面，并兼容 Intel Mac 和 Apple Silicon Mac。
+Mac 游戏工具箱是一款基于原生 SwiftUI 打造的现代化 macOS 游戏辅助与优化工具。当前版本为 **3.1.0**，专为 **Apple Silicon (ARM64)** 架构深度定制与优化，界面完全遵循 Apple HIG 人机交互指南，提供侧边栏多功能聚合体验。
 
-## 功能
+---
 
-- 全局开启或关闭 MetalHUD，或通过最近 App 启动台仅为选定 App 的本次启动启用 MetalHUD。
-- 按 10、15 或 20 秒的可选等待时间辅助启动 HoYoGames，并在任务结束或取消时恢复应用管理的 hosts 配置。
-- 自动检测 CrossOver/Wine 进程，或手动选择进程并提高其运行优先级。
-- 将外接磁盘挂载到指定路径，保存预设，并自动或手动恢复上次挂载。
-- 一键清理缓存日志，默认仅清理用户缓存和用户日志，也可关闭敏感文件排除执行完整高风险清理。
-- 切换或恢复用于兼容性测试的 Steam Deck 主机名模式。
-- 导入自定义界面壁纸、导出诊断信息，并提供 Mac 游戏与 CrossOver 教程入口。
+## 🌟 核心功能一览
 
-## 系统要求
+### 1. 概览仪表盘与实时状态监控
+- **状态看板**：实时汇总 Metal HUD 状态、Caffeinate 游戏专注模式、SteamDeck 伪装状态及外接磁盘挂载数量。
+- **冲突进程排查**：智能排查先于 HUD 启动的 Steam、CrossOver、Whisky、Wine 容器进程，支持用户自主勾选并安全重启服务。
 
-- macOS 14 或更高版本。
-- Intel 或 Apple Silicon Mac。
-- 从源码构建需要 Swift 6、Xcode 16 或兼容版本，以及 Xcode Command Line Tools。
-- 使用磁盘挂载、缓存清理、进程优先级、hosts 或主机名相关功能时，需要管理员授权。
+### 2. Metal HUD 深度调优与单应用方案
+- **全方位视觉参数定制**：支持 10%~100% 缩放比例、0~100% 不透明度调节、屏幕四角方位自由切换。
+- **23 项监控指标精细化勾选**：附带数值与单位示例，随心定制专属 HUD 监控面板。
+- **单应用专属 HUD 方案 (Per-App Profiles)**：右键最近游戏卡片即可将当前 HUD 参数绑定为该游戏的专属配置，启动时自动套用。
+- **一键导出性能快照报告**：一键生成结构化 Markdown 性能诊断报告，方便向社区反馈硬件表现。
 
-## 安装
+### 3. 游戏加速与手柄低延迟优化
+- **原生 Caffeinate 游戏专注模式**：一键开启系统原生 `caffeinate` 守护，游戏与着色器编译期间全程防休眠、防息屏与防能耗降频。
+- **macOS Game Mode 唤醒与手柄低延迟**：提供 PS5/Xbox 蓝牙手柄与 AirPods 双倍采样轮询率科普与全屏独占优化建议。
+- **CrossOver / Wine 进程最高优先级调度**：支持将 Wine 游戏进程调整至系统最高优先级 (renice -20)。
 
-### 从源码构建应用
+### 4. 存储与 Windows 游戏存档管理
+- **Windows 游戏存档探测器 (Game Save Finder)**：自动扫描 CrossOver、Whisky、Heroic 及 Wine 容器中的深层 Windows 存档目录（`AppData/Local`、`Saved Games`、`My Games`）。
+- **一键定位与 Zip 备份**：支持在 Finder 中秒级高亮打开存档目录，或一键打包备份为标准 `.zip` 归档。
+- **外接磁盘自定挂载点**：自定义外接 SSD 挂载路径，释放内置硬盘空间。
+- **安全缓存与日志清理**：支持默认敏感文件排除保护，安全释放系统空间。
+
+### 5. 系统工具与服务状态体检
+- **软件服务与权限状态检测器**：实时检测特权辅助服务通信、系统后台活动权限、Metal HUD 环境与磁盘读写权限，支持一键自动修复与历史残留清理。
+- **辅助服务精简与图标关联**：辅助服务标识符精简为 `macgametoolbox.helper`，macOS 系统设置正确展示主 App 原生图标。
+- **SteamDeck 反作弊环境伪装**：一键切换或恢复 Mac 主机名以兼容部分反作弊机制。
+
+---
+
+## 📋 更新日志 (v3.1.0)
+
+- **【UI 重构】** 全面采用 macOS 原生 `NavigationSplitView` 侧边栏架构与标准控件，告别多层嵌套弹窗。
+- **【Metal HUD 进阶】** 支持 10%~100% 缩放、透明度、四角方位、23 项指标（带数值单位示例）与单应用专属方案绑定。
+- **【性能诊断快照】** 支持一键生成结构化 Markdown 性能诊断报告，方便社区反馈与硬件评估。
+- **【进程排查与重启】** 智能排查先于 HUD 启动的冲突进程（Steam、CrossOver、Wine），支持用户自主勾选安全重启。
+- **【存档管理】** 自动扫描 CrossOver、Whisky、Wine 容器深层存档（AppData、Saved Games），支持一键定位与 Zip 备份。
+- **【游戏专注模式】** 内置原生 Caffeinate 守护进程，游戏与着色器编译期间全程防休眠、防息屏与防降频。
+- **【服务状态体检】** 新增软件服务与权限状态检测器，支持一键自动修复与历史残留服务清理。
+- **【辅助服务精简】** 辅助服务标识符精简为 `macgametoolbox.helper`，系统后台活动正确显示 App 图标。
+- **【纯 ARM64 分发】** 全面迁移至 Apple Silicon 纯原生构建，发布包统一采用无损 Zip 格式分发。
+
+---
+
+## 💻 系统要求
+
+- macOS 14.0 (Sonoma) 或更高版本。
+- Apple Silicon Mac (M1 / M2 / M3 / M4 系列芯片原生支持)。
+- 构建要求：Swift 6、Xcode 16+ 及 Command Line Tools。
+
+---
+
+## 📦 安装与构建
+
+### 运行 Release 构建并打包 Zip (纯 ARM64)
 
 ```bash
-git clone https://github.com/aiwentongxue/mac-gaming-toolbox.git
+git clone https://github.com/Souitou-iop/mac-gaming-toolbox.git
 cd mac-gaming-toolbox
-./Scripts/build-release.sh
+ARCHS=arm64 ./Scripts/build-release.sh && ./Scripts/package-zip.sh "build/DerivedData/Build/Products/Release/Mac 游戏工具箱.app" "build/Mac 游戏工具箱-arm64.zip"
 ```
 
-构建完成后，应用位于：
+---
 
-```text
-build/DerivedData/Build/Products/Release/Mac 游戏工具箱.app
-```
+## 📄 开源许可与致谢
 
-你可以直接运行该应用，或将其复制到“应用程序”目录。首次使用需要系统权限的功能时，macOS 会注册随应用提供的特权辅助服务。如果系统要求批准，请前往“系统设置 > 通用 > 登录项与扩展”允许相应后台项目。
-
-也可以使用 Swift Package Manager 进行调试构建：
-
-```bash
-swift build
-```
-
-## 使用方法
-
-1. 启动“Mac 游戏工具箱”。
-2. 在主界面选择需要的功能，并阅读对应说明。
-3. 涉及系统修改时，按 macOS 提示完成管理员授权。
-4. HoYoGames 启动帮助开启后，请在倒计时内启动游戏；取消任务会尝试恢复由本项目添加的 hosts 项目。
-5. 自定义磁盘挂载前先选择外接磁盘和目标目录；需要开机恢复时，可保存预设、启用自动恢复，并将应用加入登录项。
-
-视频教程：[【Mac游戏工具箱重磅发布!支持MetalHUD米游启动磁盘挂载等功能!】](https://b23.tv/qnJBcbk) · [YouTube](https://youtu.be/Y9g4F0_6ipI?si=i3G9dxiXMbk2NSzY)
-
-## 测试
-
-```bash
-swift test --disable-sandbox
-```
-
-## 注意事项
-
-- 缓存与日志清理属于不可撤销的高风险操作，可能导致登录状态、游戏缓存和诊断日志丢失。执行前请退出游戏及其他应用，并备份重要数据。
-- 自定义磁盘挂载、hosts 修改、主机名切换和进程优先级调整会改变系统状态。请确认目标磁盘和路径无误，并避免在系统更新、磁盘读写或重要任务进行时操作。
-- Steam Deck 模式只用于兼容性测试，不能保证绕过或兼容任何游戏的反作弊机制；请遵守游戏服务条款。
-- 本项目不是 Apple、CodeWeavers、HoYoverse 或 Valve 的官方产品，相关名称和商标归各自权利人所有。
-- 作者公开主页：[哔哩哔哩](https://b23.tv/dV7YBJQ) · [YouTube](https://youtube.com/channel/UC0TgypOLHt2fXboVw34SKVQ)
-
-## License
-
-Copyright (C) 2026 我是艾文喵
-
-本项目基于 [GNU General Public License v3.0](LICENSE) 开源。你可以在遵守 GPL-3.0 条款的前提下使用、修改和分发本项目；分发修改版本时必须保留相同的开源许可并提供相应源代码。
+- 本项目遵循 [GNU General Public License v3.0](LICENSE) 开源。
+- 原项目作者：**我是艾文喵**
+  - 原项目仓库：[aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox)
+  - 作者主页：[哔哩哔哩](https://b23.tv/dV7YBJQ) · [YouTube](https://youtube.com/channel/UC0TgypOLHt2fXboVw34SKVQ)
