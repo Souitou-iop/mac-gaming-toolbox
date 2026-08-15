@@ -16,7 +16,7 @@ public enum AppLanguagePreference: String, Codable, CaseIterable, Sendable {
 
     public var displayName: String {
         switch self {
-        case .system: return "跟随系统 (System Default / システム)"
+        case .system: return "System Default"
         case .chinese: return "简体中文"
         case .english: return "English"
         case .japanese: return "日本語"
