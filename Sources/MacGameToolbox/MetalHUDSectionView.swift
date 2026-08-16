@@ -37,19 +37,16 @@ public struct MetalHUDSectionView: View {
                 accentColor: .green
             )
 
-            // Master Toggle & Actions Card
+            // 1. Master Toggle & Actions Card (Global HUD & Launch Selected Apps)
             masterControlCard
 
-            // Interference notice card
+            // 2. Interference Notice Card
             if showingProcessNotice {
                 interferenceNoticeCard
             }
 
-            // Tuning Settings Box
+            // 3. Tuning Settings Box
             tunerSettingsBox
-
-            // Per-App HUD & Game Library Box
-            perAppHUDLauncherBox
         }
         .sheet(isPresented: $model.showingHUDAppLauncher) {
             HUDAppLauncherSheetView()
@@ -61,27 +58,30 @@ public struct MetalHUDSectionView: View {
     private var masterControlCard: some View {
         GroupBox {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 12) {
-                    Toggle(isOn: Binding(
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 8) {
+                            Text(tr("全局启用 Metal HUD", "Enable Metal HUD Globally", "Metal HUD をグローバル有効化"))
+                                .font(.headline)
+                            LiveStatusBadge(
+                                model.metalHUDEnabled ? .active : .idle,
+                                title: model.metalHUDEnabled ? tr("已开启", "ACTIVE", "有効") : tr("未开启", "OFF", "無効")
+                            )
+                        }
+                        Text(tr("写入系统 MetalForceHudEnabled 键。开启后所有基于 Metal 的 3D 游戏将自动呈现 HUD 仪表盘。",
+                                "Writes to MetalForceHudEnabled. Automatically displays the HUD overlay in Metal 3D games.",
+                                "MetalForceHudEnabled 環境変数を設定します。有効にすると、すべてのMetalベースの3DゲームでHUDオーバーレイが自動表示されます。"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: Binding(
                         get: { model.metalHUDEnabled },
                         set: { model.setMetalHUD($0) }
-                    )) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack(spacing: 8) {
-                                Text(tr("全局启用 Metal HUD", "Enable Metal HUD Globally", "Metal HUD をグローバル有効化"))
-                                    .font(.headline)
-                                LiveStatusBadge(
-                                    model.metalHUDEnabled ? .active : .idle,
-                                    title: model.metalHUDEnabled ? tr("已开启", "ACTIVE", "有効") : tr("未开启", "OFF", "無効")
-                                )
-                            }
-                            Text(tr("写入系统 MetalForceHudEnabled 键。开启后所有基于 Metal 的 3D 游戏将自动呈现 HUD 仪表盘。",
-                                    "Writes to MetalForceHudEnabled. Automatically displays the HUD overlay in Metal 3D games.",
-                                    "MetalForceHudEnabled 環境変数を設定します。有効にすると、すべてのMetalベースの3DゲームでHUDオーバーレイが自動表示されます。"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
+                    ))
+                    .labelsHidden()
                     .toggleStyle(.switch)
                 }
 
@@ -91,21 +91,15 @@ public struct MetalHUDSectionView: View {
                     Button {
                         model.openHUDAppLauncher()
                     } label: {
-                        Label(tr("单应用 HUD 注入启动器…", "Per-App HUD Launcher…", "単体アプリ HUD 起動…"), systemImage: "gamecontroller.fill")
+                        Label(tr("选择应用启动", "Launch Selected Apps", "選択アプリを起動"), systemImage: "play.circle.fill")
                     }
                     .buttonStyle(.borderedProminent)
-
-                    Button {
-                        model.addAppToHUDList()
-                    } label: {
-                        Label(tr("添加游戏", "Add Game", "ゲーム追加"), systemImage: "plus.circle")
-                    }
-                    .buttonStyle(.bordered)
+                    .tint(.green)
 
                     Button {
                         model.openMetalHUDProcessManager()
                     } label: {
-                        Label(tr("排查冲突进程…", "Check Interfering Processes…", "競合プロセスを確認…"), systemImage: "arrow.triangle.2.circlepath")
+                        Label(tr("排查冲突进程", "Check Interfering Processes", "競合プロセスを確認"), systemImage: "arrow.triangle.2.circlepath")
                     }
                     .buttonStyle(.bordered)
 
@@ -333,89 +327,16 @@ public struct MetalHUDSectionView: View {
                 }
                 .controlSize(.regular)
 
-                Button {
-                    model.exportPerformanceSnapshot()
-                } label: {
-                    Label(tr("导出性能诊断快照报告 (Markdown)", "Export Performance Snapshot (.md)", "性能スナップショットを出力 (.md)"), systemImage: "sparkles.rectangle.stack")
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.regular)
-            }
-            .padding(.top, 4)
-        }
-        .font(.subheadline)
-    }
-
-    // MARK: - Per-App HUD & Game Library Box
-
-    private var perAppHUDLauncherBox: some View {
-        GroupBox(label:
-            HStack(spacing: 8) {
-                Label(tr("单应用 Metal HUD 独立注入启动", "Per-App Metal HUD Injection & Library", "単体アプリ HUD 独立起動・管理"), systemImage: "gamecontroller.fill")
-                    .font(.headline)
-                if !model.configuration.recentMetalHUDApps.isEmpty {
-                    Text(tr("已添加 \(model.configuration.recentMetalHUDApps.count) 款游戏", "\(model.configuration.recentMetalHUDApps.count) games added", "\(model.configuration.recentMetalHUDApps.count) 本のゲーム登録済み"))
-                        .font(.caption2)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.green.opacity(0.12), in: Capsule())
-                        .foregroundStyle(.green)
-                }
-            }
-        ) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(tr("支持提前管理多个游戏软件。点击「打开选择启动器」可进入二级弹窗 Box，单选或多选游戏后一键独立注入 HUD 启动，完全不影响系统全局设置。",
-                        "Manage multiple games in advance. Open the launcher box to select single or multiple games for one-click independent HUD injection.",
-                        "ゲームを事前に登録して管理します。「選択起動マネージャーを開く」から単一または複数ゲームを選択して一括でHUD起動できます。"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Divider()
-
-                HStack(spacing: 12) {
-                    Button {
-                        model.openHUDAppLauncher()
-                    } label: {
-                        Label(tr("打开游戏选择启动器 (多选批量)…", "Open Launcher Box (Select & Launch)…", "選択起動マネージャーを開く (一括起動)…"), systemImage: "play.circle.fill")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-
-                    Button {
-                        model.addAppToHUDList()
-                    } label: {
-                        Label(tr("添加游戏至列表…", "Add Games…", "ゲームを追加…"), systemImage: "plus")
-                    }
-                    .buttonStyle(.bordered)
-
-                    Spacer()
-                }
-
-                if !model.configuration.recentMetalHUDApps.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(model.configuration.recentMetalHUDApps) { app in
-                                HStack(spacing: 6) {
-                                    Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
-                                        .resizable()
-                                        .frame(width: 18, height: 18)
-                                        .cornerRadius(4)
-                                    Text(app.displayName)
-                                        .font(.caption.bold())
-                                    if model.profileForApp(path: app.path) != nil {
-                                        Circle().fill(Color.green).frame(width: 6, height: 6)
-                                    }
-                                }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color(nsColor: .controlBackgroundColor).opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
-                            }
-                        }
-                        .padding(.top, 4)
-                    }
-                }
-            }
-            .padding(6)
-        }
-    }
+	                Button {
+	                    model.exportPerformanceSnapshot()
+	                } label: {
+	                    Label(tr("导出性能诊断快照报告 (Markdown)", "Export Performance Snapshot (.md)", "性能スナップショットを出力 (.md)"), systemImage: "sparkles.rectangle.stack")
+	                }
+	                .buttonStyle(.borderedProminent)
+	                .controlSize(.regular)
+	            }
+	            .padding(.top, 4)
+	        }
+	        .font(.subheadline)
+	    }
 }

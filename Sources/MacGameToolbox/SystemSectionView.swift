@@ -58,6 +58,8 @@ public struct SystemSectionView: View {
                         .font(.subheadline)
                         .foregroundStyle(.primary)
 
+                    Spacer()
+
                     Picker("", selection: Binding(
                         get: { model.configuration.languagePreference },
                         set: { model.setLanguagePreference($0) }
@@ -67,9 +69,7 @@ public struct SystemSectionView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .frame(maxWidth: 240)
-
-                    Spacer()
+                    .frame(width: 180)
                 }
             }
             .padding(6)
@@ -108,42 +108,42 @@ public struct SystemSectionView: View {
 
                 // Health Items List
                 if let report = model.healthReport {
-                    VStack(spacing: 8) {
-	                        ForEach(report.items) { item in
-	                            HStack(alignment: .top, spacing: 10) {
-	                                Image(systemName: item.status.iconName)
-	                                    .foregroundStyle(item.status == .healthy ? .green : (item.status == .warning ? .orange : .red))
-	                                    .font(.subheadline)
-	                                    .padding(.top, 1)
+	                    VStack(spacing: 8) {
+		                        ForEach(report.items) { item in
+		                            HStack(alignment: .center, spacing: 12) {
+		                                Image(systemName: item.status.iconName)
+		                                    .foregroundStyle(item.status == .healthy ? .green : (item.status == .warning ? .orange : .red))
+		                                    .font(.subheadline)
 
-	                                VStack(alignment: .leading, spacing: 2) {
-	                                    Text(tr(item.nameZh, item.nameEn, item.nameJa))
-	                                        .font(.caption.bold())
-	                                    Text(tr(item.detailZh, item.detailEn, item.detailJa))
-	                                        .font(.caption2)
-	                                        .foregroundStyle(.secondary)
-	                                }
+		                                VStack(alignment: .leading, spacing: 2) {
+		                                    Text(tr(item.nameZh, item.nameEn, item.nameJa))
+		                                        .font(.caption.bold())
+		                                    Text(tr(item.detailZh, item.detailEn, item.detailJa))
+		                                        .font(.caption2)
+		                                        .foregroundStyle(.secondary)
+		                                }
 
-	                                Spacer()
+		                                Spacer()
 
-	                                if item.nameZh.contains("屏幕录制") && !model.isScreenCapturePermissionGranted {
-	                                    Button(tr("请求授权", "Authorize", "許可")) {
-	                                        model.requestScreenRecordingPermission()
-	                                    }
-	                                    .buttonStyle(.borderedProminent)
-	                                    .controlSize(.mini)
-	                                } else if item.nameZh.contains("辅助功能") && !model.isAccessibilityPermissionGranted {
-	                                    Button(tr("请求授权", "Authorize", "許可")) {
-	                                        model.requestAccessibilityPermission()
-	                                    }
-	                                    .buttonStyle(.borderedProminent)
-	                                    .controlSize(.mini)
-	                                }
-	                            }
-	                            .padding(6)
-	                            .background(Color(nsColor: .controlBackgroundColor).opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
-	                        }
-                    }
+		                                if item.nameZh.contains("屏幕录制") && !model.isScreenCapturePermissionGranted {
+		                                    Button(tr("请求授权", "Authorize", "許可")) {
+		                                        model.requestScreenRecordingPermission()
+		                                    }
+		                                    .buttonStyle(.borderedProminent)
+		                                    .controlSize(.small)
+		                                } else if item.nameZh.contains("辅助功能") && !model.isAccessibilityPermissionGranted {
+		                                    Button(tr("请求授权", "Authorize", "許可")) {
+		                                        model.requestAccessibilityPermission()
+		                                    }
+		                                    .buttonStyle(.borderedProminent)
+		                                    .controlSize(.small)
+		                                }
+		                            }
+		                            .padding(.horizontal, 10)
+		                            .padding(.vertical, 8)
+		                            .background(Color(nsColor: .controlBackgroundColor).opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+		                        }
+	                    }
 
                     // Legacy Helper Warning Banner
                     if !report.legacyHelpersFound.isEmpty {
@@ -179,103 +179,103 @@ public struct SystemSectionView: View {
 
                 // Action Controls
                 HStack(spacing: 12) {
-                    let helperInstalled = FileManager.default.fileExists(atPath: "/Library/PrivilegedHelperTools/macgametoolbox.helper")
-                    Button {
-                        model.cleanAllLegacyHelpersAndRepair()
-                    } label: {
-                        Label(
-                            helperInstalled ? tr("一键重新注册与修复服务", "Re-register & Repair Service", "サービスの再登録と修復") : tr("手动安装特权辅助服务…", "Install Privileged Helper…", "特権ヘルパーを手動インストール…"),
-                            systemImage: helperInstalled ? "sparkles" : "shield.badge.plus"
-                        )
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.purple)
-                    .controlSize(.regular)
+	                    let helperInstalled = FileManager.default.fileExists(atPath: "/Library/PrivilegedHelperTools/macgametoolbox.helper")
+	                    Button {
+	                        model.cleanAllLegacyHelpersAndRepair()
+	                    } label: {
+	                        Label(
+	                            helperInstalled ? tr("一键重新注册与修复服务", "Re-register & Repair Service", "サービスの再登録と修復") : tr("手动安装特权辅助服务", "Install Privileged Helper", "特権ヘルパーを手動インストール"),
+	                            systemImage: helperInstalled ? "sparkles" : "shield.badge.plus"
+	                        )
+	                    }
+	                    .buttonStyle(.borderedProminent)
+	                    .tint(.purple)
+	                    .controlSize(.regular)
 
-                    Button {
-                        model.openBackgroundSettings()
-                    } label: {
-                        Label(tr("打开系统后台设置…", "Open Login Items…", "バックグラウンド設定を開く…"), systemImage: "gearshape")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.regular)
+	                    Button {
+	                        model.openBackgroundSettings()
+	                    } label: {
+	                        Label(tr("打开系统后台设置", "Open Login Items", "バックグラウンド設定を開く"), systemImage: "gearshape")
+	                    }
+	                    .buttonStyle(.bordered)
+	                    .controlSize(.regular)
 
-                    Button {
-                        model.checkSystemHealth()
-                    } label: {
-                        Label(tr("刷新", "Refresh", "更新"), systemImage: "arrow.clockwise")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.regular)
-                    .disabled(model.isCheckingHealth)
+	                    Button {
+	                        model.checkSystemHealth()
+	                    } label: {
+	                        Label(tr("刷新", "Refresh", "更新"), systemImage: "arrow.clockwise")
+	                    }
+	                    .buttonStyle(.bordered)
+	                    .controlSize(.regular)
+	                    .disabled(model.isCheckingHealth)
 
-                    Spacer()
-                }
-            }
-            .padding(6)
-        }
-    }
+	                    Spacer()
+	                }
+	            }
+	            .padding(6)
+	        }
+	    }
 
-    // MARK: - Tutorial & Changelog Boxes
+	    // MARK: - Tutorial & Changelog Boxes
 
-    private var tutorialBox: some View {
-        GroupBox(label: Label(tr("教程总导航", "Tutorial Hub", "チュートリアル・ガイド"), systemImage: "book.pages.fill").font(.headline)) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(tr("Mac 游戏运行、Wine 容器配置、GPTK 补丁教程", "Guides for Mac gaming, Wine bottles, and GPTK.", "Macゲーム環境構築、Wineボトル設定、GPTKパッチの解説"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: 4)
-                Button(tr("打开教程导航…", "Open Hub…", "ガイドを開く…")) {
-                    model.showingTutorials = true
-                }
-                .controlSize(.small)
-            }
-            .padding(4)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
+	    private var tutorialBox: some View {
+	        GroupBox(label: Label(tr("教程总导航", "Tutorial Hub", "チュートリアル・ガイド"), systemImage: "book.pages.fill").font(.headline)) {
+	            VStack(alignment: .leading, spacing: 10) {
+	                Text(tr("Mac 游戏运行、Wine 容器配置、GPTK 补丁教程", "Guides for Mac gaming, Wine bottles, and GPTK.", "Macゲーム環境構築、Wineボトル設定、GPTKパッチの解説"))
+	                    .font(.caption)
+	                    .foregroundStyle(.secondary)
+	                Spacer(minLength: 4)
+	                Button(tr("打开教程导航", "Open Hub", "ガイドを開く")) {
+	                    model.showingTutorials = true
+	                }
+	                .controlSize(.small)
+	            }
+	            .padding(4)
+	            .frame(maxWidth: .infinity, alignment: .leading)
+	        }
+	    }
 
-    private var changelogBox: some View {
-        GroupBox(label: Label(tr("更新日志", "Changelog", "更新履歴"), systemImage: "clock.arrow.circlepath").font(.headline)) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(tr("查看最新版本更新历史与功能改进记录", "View recent release changes and feature enhancements.", "最新バージョンの更新内容と機能改善履歴を確認"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: 4)
-                Button(tr("查看更新记录…", "View Changelog…", "履歴を確認…")) {
-                    model.showingChangelog = true
-                }
-                .controlSize(.small)
-            }
-            .padding(4)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
+	    private var changelogBox: some View {
+	        GroupBox(label: Label(tr("更新日志", "Changelog", "更新履歴"), systemImage: "clock.arrow.circlepath").font(.headline)) {
+	            VStack(alignment: .leading, spacing: 10) {
+	                Text(tr("查看最新版本更新历史与功能改进记录", "View recent release changes and feature enhancements.", "最新バージョンの更新内容と機能改善履歴を確認"))
+	                    .font(.caption)
+	                    .foregroundStyle(.secondary)
+	                Spacer(minLength: 4)
+	                Button(tr("查看更新记录", "View Changelog", "履歴を確認")) {
+	                    model.showingChangelog = true
+	                }
+	                .controlSize(.small)
+	            }
+	            .padding(4)
+	            .frame(maxWidth: .infinity, alignment: .leading)
+	        }
+	    }
 
-    // MARK: - Diagnostics & Repair Box
+	    // MARK: - Diagnostics & Repair Box
 
-    private var diagnosticsBox: some View {
-        GroupBox {
-            HStack(spacing: 12) {
-                Image(systemName: "wrench.and.screwdriver.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.secondary)
+	    private var diagnosticsBox: some View {
+	        GroupBox {
+	            HStack(spacing: 12) {
+	                Image(systemName: "wrench.and.screwdriver.fill")
+	                    .font(.system(size: 16))
+	                    .foregroundStyle(.secondary)
 
-                Text(tr("遇到权限或执行异常？", "Encountered issues?", "権限や動作に問題がありますか？"))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+	                Text(tr("遇到权限或执行异常？", "Encountered issues?", "権限や動作に問題がありますか？"))
+	                    .font(.subheadline)
+	                    .foregroundStyle(.secondary)
 
-                Spacer()
+	                Spacer()
 
-                Button(tr("修复核心功能", "Repair Core", "コア機能を修復")) {
-                    model.repairCoreFeatures()
-                }
-                .controlSize(.small)
+	                Button(tr("修复核心功能", "Repair Core", "コア機能を修復")) {
+	                    model.repairCoreFeatures()
+	                }
+	                .controlSize(.small)
 
-                Button(tr("导出诊断日志…", "Export Diagnostics…", "診断ログを出力…")) {
-                    model.requestDiagnosticsExport()
-                }
-                .controlSize(.small)
+	                Button(tr("导出诊断日志", "Export Diagnostics", "診断ログを出力")) {
+	                    model.requestDiagnosticsExport()
+	                }
+	                .controlSize(.small)
             }
             .padding(4)
         }

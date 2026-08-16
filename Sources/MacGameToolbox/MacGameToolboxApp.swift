@@ -9,15 +9,20 @@ struct MacGameToolboxApp: App {
     init() {
         let appModel = AppModel()
         _model = StateObject(wrappedValue: appModel)
-        MenuCommandCoordinator.shared.install(model: appModel)
-        StatusBarController.shared.setup(model: appModel)
+        DispatchQueue.main.async {
+            MenuCommandCoordinator.shared.install(model: appModel)
+            StatusBarController.shared.setup(model: appModel)
+        }
     }
 
     var body: some Scene {
         Window(tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス"), id: "main") {
-            DashboardView()
-                .environmentObject(model)
-                .frame(minWidth: 900, minHeight: 650)
+            ZStack {
+                DashboardView()
+                    .environmentObject(model)
+                MainWindowBridge()
+            }
+            .frame(minWidth: 900, minHeight: 650)
         }
         .defaultSize(width: 1040, height: 760)
         .commandsReplaced {
@@ -44,6 +49,34 @@ struct MacGameToolboxApp: App {
     }
 }
 
+struct MainWindowBridge: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .onAppear {
+                MenuCommandCoordinator.shared.openWindowAction = {
+                    openWindow(id: "main")
+                }
+            }
+    }
+}
+
+@MainActor
+final class MainWindowDelegate: NSObject, NSWindowDelegate {
+    static let shared = MainWindowDelegate()
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        sender.orderOut(nil)
+        sender.isReleasedWhenClosed = false
+        DispatchQueue.main.async {
+            MenuCommandCoordinator.shared.updateDockVisibility()
+        }
+        return false
+    }
+}
+
 final class MacGameToolboxApplicationDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
@@ -63,9 +96,7 @@ final class MacGameToolboxApplicationDelegate: NSObject, NSApplicationDelegate {
         _ sender: NSApplication,
         hasVisibleWindows flag: Bool
     ) -> Bool {
-        if !flag {
-            MenuCommandCoordinator.shared.reopenMainWindow()
-        }
+        MenuCommandCoordinator.shared.reopenMainWindow()
         return true
     }
 }
@@ -74,15 +105,19 @@ final class MacGameToolboxApplicationDelegate: NSObject, NSApplicationDelegate {
 final class MenuCommandCoordinator: NSObject {
     static let shared = MenuCommandCoordinator()
     private weak var model: AppModel?
+    var openWindowAction: (() -> Void)?
     private var keyMonitor: Any?
     private var explicitQuitRequested = false
     private var menuObserverInstalled = false
+    private var windowObserverInstalled = false
     private var isReorderingMenus = false
 
     func install(model: AppModel) {
         self.model = model
         installMenuOrderObserverIfNeeded()
+        installWindowLifecycleObservers()
         stabilizeTopLevelMenuOrder()
+        updateDockVisibility()
         guard keyMonitor == nil else { return }
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             let relevantModifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
@@ -96,6 +131,57 @@ final class MenuCommandCoordinator: NSObject {
                 return nil
             default:
                 return event
+            }
+        }
+    }
+
+    private func installWindowLifecycleObservers() {
+        guard !windowObserverInstalled else { return }
+        windowObserverInstalled = true
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowDidBecomeKey(_:)),
+            name: NSWindow.didBecomeKeyNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowWillClose(_:)),
+            name: NSWindow.willCloseNotification,
+            object: nil
+        )
+    }
+
+    @objc private func windowDidBecomeKey(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              !(window is NSPanel),
+              window.canBecomeMain else { return }
+        if window.delegate == nil || window.delegate !== MainWindowDelegate.shared {
+            window.delegate = MainWindowDelegate.shared
+        }
+        updateDockVisibility()
+    }
+
+    @objc private func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              !(window is NSPanel),
+              window.canBecomeMain else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.updateDockVisibility()
+        }
+    }
+
+    func updateDockVisibility() {
+        let hasVisibleMainWindow = NSApp.windows.contains { window in
+            !(window is NSPanel) && window.canBecomeMain && window.isVisible
+        }
+        if hasVisibleMainWindow {
+            if NSApp.activationPolicy() != .regular {
+                NSApp.setActivationPolicy(.regular)
+            }
+        } else {
+            if NSApp.activationPolicy() != .accessory {
+                NSApp.setActivationPolicy(.accessory)
             }
         }
     }
@@ -118,18 +204,25 @@ final class MenuCommandCoordinator: NSObject {
     }
 
     private func stabilizeTopLevelMenuOrder() {
-        guard !isReorderingMenus, let menu = NSApp.mainMenu else { return }
+        guard !isReorderingMenus, let menu = NSApp.mainMenu, !menu.items.isEmpty else { return }
         isReorderingMenus = true
-        if let viewItem = menu.items.first(where: { $0.title == tr("显示", "View") }) {
-            menu.removeItem(viewItem)
+        defer { isReorderingMenus = false }
+
+        if let viewIndex = menu.items.firstIndex(where: { $0.title == tr("显示", "View", "表示") }) {
+            menu.removeItem(at: viewIndex)
         }
-        if let windowItem = menu.items.first(where: { $0.title == tr("窗口", "Window") }),
-           let helpItem = menu.items.first(where: { $0.title == tr("帮助", "Help") }),
-           menu.index(of: helpItem) < menu.index(of: windowItem) {
-            menu.removeItem(helpItem)
-            menu.insertItem(helpItem, at: menu.index(of: windowItem) + 1)
+        if let windowIndex = menu.items.firstIndex(where: { $0.title == tr("窗口", "Window", "ウィンドウ") }),
+           let helpIndex = menu.items.firstIndex(where: { $0.title == tr("帮助", "Help", "ヘルプ") }),
+           helpIndex < windowIndex {
+            let helpItem = menu.items[helpIndex]
+            menu.removeItem(at: helpIndex)
+            if let newWindowIndex = menu.items.firstIndex(where: { $0.title == tr("窗口", "Window", "ウィンドウ") }) {
+                let targetIndex = min(menu.items.count, newWindowIndex + 1)
+                menu.insertItem(helpItem, at: targetIndex)
+            } else {
+                menu.addItem(helpItem)
+            }
         }
-        isReorderingMenus = false
     }
 
     func showAboutPanel() {
@@ -153,14 +246,32 @@ final class MenuCommandCoordinator: NSObject {
 
     func minimize() { (NSApp.keyWindow ?? NSApp.mainWindow)?.miniaturize(nil) }
     func closeWindow() {
-        (NSApp.keyWindow ?? NSApp.mainWindow)?.orderOut(nil)
+        let mainWin = (NSApp.keyWindow ?? NSApp.mainWindow) ?? NSApp.windows.first { !($0 is NSPanel) && $0.canBecomeMain }
+        mainWin?.orderOut(nil)
+        DispatchQueue.main.async { [weak self] in
+            self?.updateDockVisibility()
+        }
     }
     func reopenMainWindow() {
-        let window = NSApp.windows.first { window in
-            !(window is NSPanel) && window.canBecomeMain
+        NSApp.setActivationPolicy(.regular)
+        NSApp.unhide(nil)
+        var found = false
+        for window in NSApp.windows where !(window is NSPanel) && window.canBecomeMain {
+            if window.isMiniaturized {
+                window.deminiaturize(nil)
+            }
+            window.makeKeyAndOrderFront(nil)
+            window.setIsVisible(true)
+            window.orderFrontRegardless()
+            found = true
         }
-        window?.makeKeyAndOrderFront(nil)
+        if !found {
+            openWindowAction?()
+        }
         NSApp.activate(ignoringOtherApps: true)
+        DispatchQueue.main.async { [weak self] in
+            self?.updateDockVisibility()
+        }
     }
     func zoom() { (NSApp.keyWindow ?? NSApp.mainWindow)?.performZoom(nil) }
     func toggleFullScreen() { (NSApp.keyWindow ?? NSApp.mainWindow)?.toggleFullScreen(nil) }

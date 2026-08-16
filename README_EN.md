@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2014.0%2B-lightgrey.svg)](https://apple.com/macos)
 [![Architecture](https://img.shields.io/badge/Architecture-Apple%20Silicon%20(ARM64)-brightgreen.svg)](https://apple.com/mac)
-[![Release](https://img.shields.io/badge/Release-v4.0.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
+[![Release](https://img.shields.io/badge/Release-v4.0.8-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
 
 > **About this repository**: This project is an enhanced and refactored fork based on the original open-source utility created by **[@我是艾文喵 (Iven)](https://github.com/aiwentongxue)**: [aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox).
 
@@ -88,7 +88,7 @@ While preserving all core capabilities of the upstream utility, this fork introd
 
 ## 📋 Feature Comparison Table
 
-| Feature / Capability | Upstream (Original) | Enhanced Fork (v4.0.0) |
+| Feature / Capability | Upstream (Original) | Enhanced Fork (v4.0.8) |
 | :--- | :---: | :---: |
 | **Scaling & Frame Gen** | None | **0ms Hardware FG (2x-4x), MetalFX Upscaling, CAS, TAA/SMAA/FXAA** |
 | **UI Architecture** | Legacy Floating Windows / Sheets | Modern Native Sidebar (`NavigationSplitView`) |

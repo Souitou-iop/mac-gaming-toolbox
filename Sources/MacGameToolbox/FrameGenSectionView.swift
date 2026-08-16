@@ -119,7 +119,7 @@ public struct FrameGenSectionView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
 
-                        Button(tr("系统设置…", "Settings…", "システム設定…")) {
+                        Button(tr("系统设置", "Settings", "システム設定")) {
                             model.openScreenRecordingSettings()
                         }
                         .buttonStyle(.bordered)

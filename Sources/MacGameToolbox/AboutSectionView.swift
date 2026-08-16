@@ -57,7 +57,7 @@ public struct AboutSectionView: View {
                     HStack(spacing: 8) {
                         Text(tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Mac ゲーミングツールボックス"))
                             .font(.title2.bold())
-                        Text("v4.0.0")
+                        Text("v4.0.8")
                             .font(.subheadline.monospaced())
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)

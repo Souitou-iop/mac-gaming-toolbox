@@ -112,7 +112,7 @@ public struct OverviewSectionView: View {
                 Divider()
 
                 HStack(spacing: 8) {
-                    Button(tr("进入调优…", "Tune…", "詳細設定…")) {
+                    Button(tr("进入调优", "Tune", "詳細設定")) {
                         onNavigateToSection?(.frameGen)
                     }
                     .buttonStyle(.bordered)
@@ -154,13 +154,13 @@ public struct OverviewSectionView: View {
                 Divider()
 
                 HStack(spacing: 8) {
-                    Button(tr("详细调优…", "Tune Settings…", "詳細設定…")) {
+                    Button(tr("详细调优", "Tune Settings", "詳細設定")) {
                         onNavigateToSection?(.metalHUD)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
 
-                    Button(tr("排查进程…", "Check Processes…", "競合プロセス確認…")) {
+                    Button(tr("排查进程", "Check Processes", "競合プロセス確認")) {
                         model.openMetalHUDProcessManager()
                     }
                     .buttonStyle(.bordered)
@@ -194,7 +194,7 @@ public struct OverviewSectionView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
 
-                    Button(tr("更多设置…", "Details…", "詳細…")) {
+                    Button(tr("更多设置", "Details", "詳細")) {
                         onNavigateToSection?(.gameBoost)
                     }
                     .buttonStyle(.bordered)
@@ -222,7 +222,7 @@ public struct OverviewSectionView: View {
                 Divider()
 
                 HStack(spacing: 8) {
-                    Button(tr("管理磁盘…", "Manage Disks…", "ディスク管理…")) {
+                    Button(tr("管理磁盘", "Manage Disks", "ディスク管理")) {
                         model.loadDisks()
                     }
                     .buttonStyle(.borderedProminent)
@@ -263,7 +263,7 @@ public struct OverviewSectionView: View {
                     .tint(isSteamDeckActive ? .red : .purple)
                     .controlSize(.small)
 
-                    Button(tr("详情…", "Details…", "詳細…")) {
+                    Button(tr("详情", "Details", "詳細")) {
                         onNavigateToSection?(.gameBoost)
                     }
                     .buttonStyle(.bordered)
@@ -310,7 +310,7 @@ public struct OverviewSectionView: View {
                         .controlSize(.small)
                     }
 
-                    Button(tr("更多设置…", "Settings…", "設定…")) {
+                    Button(tr("更多设置", "Settings", "設定")) {
                         onNavigateToSection?(.gameBoost)
                     }
                     .buttonStyle(.bordered)

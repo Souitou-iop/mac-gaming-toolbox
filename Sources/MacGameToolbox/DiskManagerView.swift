@@ -87,7 +87,7 @@ struct DiskManagerView: View {
                                 if model.selectedDiskIDs.contains(disk.id) {
                                     HStack {
                                         TextField(tr("挂载路径", "Mount path", "マウントパス"), text: pathBinding(disk.id))
-                                        Button(tr("浏览", "Browse", "参照…")) { model.choosePath(for: disk.id) }
+                                        Button(tr("浏览", "Browse", "参照")) { model.choosePath(for: disk.id) }
                                         if !model.configuration.defaultPaths.isEmpty {
                                             Menu(tr("默认路径", "Defaults", "プリセットパス")) {
                                                 ForEach(model.configuration.defaultPaths, id: \.self) { path in

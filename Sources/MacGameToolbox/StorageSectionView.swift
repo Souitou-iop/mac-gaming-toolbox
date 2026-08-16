@@ -145,7 +145,7 @@ public struct StorageSectionView: View {
                                 Button {
                                     model.exportSaveBackup(save)
                                 } label: {
-                                    Label(tr("备份为 Zip…", "Backup Zip…", "Zipバックアップ…"), systemImage: "square.and.arrow.up")
+                                    Label(tr("备份为 Zip", "Backup Zip", "Zipバックアップ"), systemImage: "square.and.arrow.up")
                                 }
                                 .buttonStyle(.borderedProminent)
                                 .controlSize(.small)
@@ -190,7 +190,7 @@ public struct StorageSectionView: View {
                     Button {
                         model.loadDisks()
                     } label: {
-                        Label(tr("管理磁盘与挂载点…", "Manage Volumes…", "ディスク・マウント設定…"), systemImage: "slider.horizontal.2.square")
+                        Label(tr("管理磁盘与挂载点", "Manage Volumes", "ディスク・マウント設定"), systemImage: "slider.horizontal.2.square")
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.regular)
@@ -234,7 +234,7 @@ public struct StorageSectionView: View {
                     Button(role: .destructive) {
                         model.prepareCacheScan()
                     } label: {
-                        Label(tr("扫描并清理缓存…", "Scan & Clear Caches…", "キャッシュをスキャン・削除…"), systemImage: "trash")
+                        Label(tr("扫描并清理缓存", "Scan & Clear Caches", "キャッシュをスキャン・削除"), systemImage: "trash")
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)

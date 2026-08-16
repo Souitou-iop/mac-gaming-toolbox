@@ -108,7 +108,7 @@ public struct GameBoostSectionView: View {
                     Button {
                         model.loadProcessesForManualSelection()
                     } label: {
-                        Label(tr("手动选择进程…", "Manual Selection…", "プロセスを手動選択…"), systemImage: "list.bullet")
+                        Label(tr("手动选择进程", "Manual Selection", "プロセスを手動選択"), systemImage: "list.bullet")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.regular)

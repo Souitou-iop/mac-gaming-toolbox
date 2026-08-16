@@ -24,9 +24,9 @@ public struct HUDAppLauncherSheetView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(tr("单应用 Metal HUD 独立注入启动器", "Per-App Metal HUD Launcher", "単体アプリ Metal HUD 起動マネージャー"))
+                    Text(tr("选择应用启动", "Launch Selected Apps", "選択アプリを起動"))
                         .font(.headline)
-                    Text(tr("在下方单选或多选要启动的游戏/软件。点击底部启动按钮即可一键完成环境注入并批量启动，无需开启全局 HUD。",
+                    Text(tr("在下方单选或多选要启动的游戏/软件。点击启动按钮即可一键完成环境注入并批量启动，无需开启全局 HUD。",
                             "Select one or more games to launch with independent Metal HUD injection without enabling global HUD.",
                             "起動したいゲームを選択してください。グローバルHUDを有効化することなく、選択したゲームに独立してHUDを注入・一括起動します。"))
                         .font(.caption)
@@ -52,7 +52,7 @@ public struct HUDAppLauncherSheetView: View {
                 Button {
                     model.addAppToHUDList()
                 } label: {
-                    Label(tr("添加新应用…", "Add New App…", "新しいアプリを追加…"), systemImage: "plus.circle.fill")
+                    Label(tr("添加新应用", "Add New App", "新しいアプリを追加"), systemImage: "plus.circle.fill")
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
@@ -199,27 +199,17 @@ public struct HUDAppLauncherSheetView: View {
 
             Spacer()
 
-            // Quick Actions Menu
-            Menu {
-                Button(tr("设当前配置为专属方案", "Save Current HUD as Profile", "現在の設定を個別保存")) {
-                    model.saveProfileForApp(path: app.path, options: model.configuration.metalHUDOptions)
-                }
-                if hasCustomProfile {
-                    Button(tr("恢复跟随全局配置", "Reset to Global Default", "全体設定に戻す")) {
-                        model.removeProfileForApp(path: app.path)
-                    }
-                }
-                Divider()
-                Button(tr("从列表中移除", "Remove from List", "一覧から削除"), role: .destructive) {
-                    model.removeAppFromHUDList(path: app.path)
-                }
+            // Single Game Direct Launch Button
+            Button {
+                dismiss()
+                model.launchRecordedAppWithMetalHUD(app.path)
             } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.secondary)
+                Label(tr("启动", "Launch", "起動"), systemImage: "play.fill")
+                    .font(.system(size: 11, weight: .bold))
             }
-            .menuStyle(.borderlessButton)
-            .frame(width: 24)
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
+            .controlSize(.small)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)

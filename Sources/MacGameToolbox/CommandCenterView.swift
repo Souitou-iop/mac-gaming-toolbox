@@ -105,7 +105,7 @@ public struct CommandCenterView: View {
                     Button {
                         model.launchAppWithMetalHUD()
                     } label: {
-                        Label(tr("单 App 注入启动…", "Launch with HUD…"), systemImage: "plus.app.fill")
+                        Label(tr("单 App 注入启动", "Launch with HUD"), systemImage: "plus.app.fill")
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.regular)
@@ -113,7 +113,7 @@ public struct CommandCenterView: View {
                     Button {
                         model.openMetalHUDProcessManager()
                     } label: {
-                        Label(tr("排查冲突进程…", "Process Manager…"), systemImage: "arrow.triangle.2.circlepath")
+                        Label(tr("排查冲突进程", "Process Manager"), systemImage: "arrow.triangle.2.circlepath")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
@@ -223,7 +223,7 @@ public struct CommandCenterView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
 
-                        Button(tr("手动选择…", "Select…")) {
+                        Button(tr("手动选择", "Select")) {
                             model.loadProcessesForManualSelection()
                         }
                         .buttonStyle(.bordered)
@@ -281,7 +281,7 @@ public struct CommandCenterView: View {
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 4)
                     HStack(spacing: 8) {
-                        Button(tr("管理磁盘…", "Manage Disks…")) {
+                        Button(tr("管理磁盘", "Manage Disks")) {
                             model.loadDisks()
                         }
                         .buttonStyle(.borderedProminent)
@@ -304,7 +304,7 @@ public struct CommandCenterView: View {
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 4)
                     HStack(spacing: 8) {
-                        Button(tr("一键清理…", "Clean Now…"), role: .destructive) {
+                        Button(tr("一键清理", "Clean Now"), role: .destructive) {
                             model.prepareCacheScan()
                         }
                         .buttonStyle(.borderedProminent)
@@ -351,7 +351,7 @@ public struct CommandCenterView: View {
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 4)
                     HStack(spacing: 8) {
-                        Button(tr("教程总导航…", "Tutorials…")) {
+                        Button(tr("教程总导航", "Tutorials")) {
                             model.showingTutorials = true
                         }
                         .buttonStyle(.bordered)
