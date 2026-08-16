@@ -60,6 +60,8 @@
 			A10000000000000000000039 /* ScalingHotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000023 /* ScalingHotkeyManager.swift */; };
 			A1000000000000000000003A /* MouseConstraintManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000024 /* MouseConstraintManager.swift */; };
 			B1000000000000000000000C /* ScalingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000010 /* ScalingModels.swift */; };
+			A1000000000000000000003B /* HUDAppLauncherSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000025 /* HUDAppLauncherSheetView.swift */; };
+			A1000000000000000000003C /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000026 /* StatusBarController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -143,6 +145,8 @@
 			F20000000000000000000022 /* ScalingOverlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScalingOverlayController.swift; sourceTree = "<group>"; };
 			F20000000000000000000023 /* ScalingHotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScalingHotkeyManager.swift; sourceTree = "<group>"; };
 			F20000000000000000000024 /* MouseConstraintManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseConstraintManager.swift; sourceTree = "<group>"; };
+			F20000000000000000000025 /* HUDAppLauncherSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDAppLauncherSheetView.swift; sourceTree = "<group>"; };
+			F20000000000000000000026 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -236,6 +240,8 @@
 					F20000000000000000000022 /* ScalingOverlayController.swift */,
 					F20000000000000000000023 /* ScalingHotkeyManager.swift */,
 					F20000000000000000000024 /* MouseConstraintManager.swift */,
+					F20000000000000000000025 /* HUDAppLauncherSheetView.swift */,
+					F20000000000000000000026 /* StatusBarController.swift */,
 			);
 			name = MacGameToolbox;
 			path = Sources/MacGameToolbox;
@@ -398,6 +404,8 @@
 				A10000000000000000000038 /* ScalingOverlayController.swift in Sources */,
 				A10000000000000000000039 /* ScalingHotkeyManager.swift in Sources */,
 				A1000000000000000000003A /* MouseConstraintManager.swift in Sources */,
+				A1000000000000000000003B /* HUDAppLauncherSheetView.swift in Sources */,
+				A1000000000000000000003C /* StatusBarController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

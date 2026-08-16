@@ -48,10 +48,11 @@ public struct MetalHUDSectionView: View {
             // Tuning Settings Box
             tunerSettingsBox
 
-            // Recent Apps Grid
-            if !model.configuration.recentMetalHUDApps.isEmpty {
-                recentAppsBox
-            }
+            // Per-App HUD & Game Library Box
+            perAppHUDLauncherBox
+        }
+        .sheet(isPresented: $model.showingHUDAppLauncher) {
+            HUDAppLauncherSheetView()
         }
     }
 
@@ -88,11 +89,18 @@ public struct MetalHUDSectionView: View {
 
                 HStack(spacing: 10) {
                     Button {
-                        model.launchAppWithMetalHUD()
+                        model.openHUDAppLauncher()
                     } label: {
-                        Label(tr("注入启动单个 App…", "Launch App with HUD…", "単一アプリをHUD付きで起動…"), systemImage: "plus.app.fill")
+                        Label(tr("单应用 HUD 注入启动器…", "Per-App HUD Launcher…", "単体アプリ HUD 起動…"), systemImage: "gamecontroller.fill")
                     }
                     .buttonStyle(.borderedProminent)
+
+                    Button {
+                        model.addAppToHUDList()
+                    } label: {
+                        Label(tr("添加游戏", "Add Game", "ゲーム追加"), systemImage: "plus.circle")
+                    }
+                    .buttonStyle(.bordered)
 
                     Button {
                         model.openMetalHUDProcessManager()
@@ -338,15 +346,15 @@ public struct MetalHUDSectionView: View {
         .font(.subheadline)
     }
 
-    // MARK: - Recent Apps Box
+    // MARK: - Per-App HUD & Game Library Box
 
-    private var recentAppsBox: some View {
+    private var perAppHUDLauncherBox: some View {
         GroupBox(label:
             HStack(spacing: 8) {
-                Text(tr("快捷启动游戏 (支持单应用专属 HUD 配置)", "Quick Launch Games (Per-App Profiles)", "クイック起動（アプリ個別HUD設定対応）"))
+                Label(tr("单应用 Metal HUD 独立注入启动", "Per-App Metal HUD Injection & Library", "単体アプリ HUD 独立起動・管理"), systemImage: "gamecontroller.fill")
                     .font(.headline)
-                if !model.configuration.perAppHUDProfiles.isEmpty {
-                    Text(tr("\(model.configuration.perAppHUDProfiles.count) 个专属方案", "\(model.configuration.perAppHUDProfiles.count) custom profiles", "\(model.configuration.perAppHUDProfiles.count) 個の個別プロファイル"))
+                if !model.configuration.recentMetalHUDApps.isEmpty {
+                    Text(tr("已添加 \(model.configuration.recentMetalHUDApps.count) 款游戏", "\(model.configuration.recentMetalHUDApps.count) games added", "\(model.configuration.recentMetalHUDApps.count) 本のゲーム登録済み"))
                         .font(.caption2)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -355,67 +363,59 @@ public struct MetalHUDSectionView: View {
                 }
             }
         ) {
-            ScrollView(.horizontal, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(tr("支持提前管理多个游戏软件。点击「打开选择启动器」可进入二级弹窗 Box，单选或多选游戏后一键独立注入 HUD 启动，完全不影响系统全局设置。",
+                        "Manage multiple games in advance. Open the launcher box to select single or multiple games for one-click independent HUD injection.",
+                        "ゲームを事前に登録して管理します。「選択起動マネージャーを開く」から単一または複数ゲームを選択して一括でHUD起動できます。"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Divider()
+
                 HStack(spacing: 12) {
-                    ForEach(model.configuration.recentMetalHUDApps) { app in
-                        recentAppTile(app)
+                    Button {
+                        model.openHUDAppLauncher()
+                    } label: {
+                        Label(tr("打开游戏选择启动器 (多选批量)…", "Open Launcher Box (Select & Launch)…", "選択起動マネージャーを開く (一括起動)…"), systemImage: "play.circle.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+
+                    Button {
+                        model.addAppToHUDList()
+                    } label: {
+                        Label(tr("添加游戏至列表…", "Add Games…", "ゲームを追加…"), systemImage: "plus")
+                    }
+                    .buttonStyle(.bordered)
+
+                    Spacer()
+                }
+
+                if !model.configuration.recentMetalHUDApps.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(model.configuration.recentMetalHUDApps) { app in
+                                HStack(spacing: 6) {
+                                    Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
+                                        .resizable()
+                                        .frame(width: 18, height: 18)
+                                        .cornerRadius(4)
+                                    Text(app.displayName)
+                                        .font(.caption.bold())
+                                    if model.profileForApp(path: app.path) != nil {
+                                        Circle().fill(Color.green).frame(width: 6, height: 6)
+                                    }
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color(nsColor: .controlBackgroundColor).opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
+                            }
+                        }
+                        .padding(.top, 4)
                     }
                 }
-                .padding(6)
             }
-        }
-    }
-
-    private func recentAppTile(_ app: RecentMetalHUDApp) -> some View {
-        let hasCustomProfile = model.profileForApp(path: app.path) != nil
-
-        return VStack(spacing: 6) {
-            ZStack(alignment: .topTrailing) {
-                Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
-                    .resizable()
-                    .frame(width: 44, height: 44)
-
-                if hasCustomProfile {
-                    Circle()
-                        .fill(Color.green)
-                        .frame(width: 8, height: 8)
-                        .offset(x: 2, y: -2)
-                }
-            }
-
-            Text(app.displayName)
-                .font(.caption)
-                .lineLimit(1)
-                .frame(width: 90)
-
-            Button(tr("启动", "Launch", "起動")) {
-                model.launchRecordedAppWithMetalHUD(app.path)
-            }
-            .controlSize(.small)
-            .buttonStyle(.borderedProminent)
-        }
-        .padding(8)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.4), in: RoundedRectangle(cornerRadius: 8))
-        .contextMenu {
-            if hasCustomProfile {
-                Button(tr("恢复为全局 HUD 配置", "Reset to Global HUD", "グローバル HUD 設定に戻す")) {
-                    model.removeProfileForApp(path: app.path)
-                }
-            } else {
-                Button(tr("将当前 HUD 参数设为专属方案", "Set Current HUD as App Profile", "現在のHUD設定を個別プロファイルとして保存")) {
-                    model.saveProfileForApp(path: app.path, options: model.configuration.metalHUDOptions)
-                }
-            }
-
-            Button(tr("为此游戏生成性能诊断快照…", "Generate Snapshot Report…", "このゲームの性能スナップショットを生成…")) {
-                model.exportPerformanceSnapshot(for: app.path)
-            }
-
-            Divider()
-
-            Button(tr("移出列表", "Remove from list", "リストから削除"), role: .destructive) {
-                model.removeRecentMetalHUDApp(app)
-            }
+            .padding(6)
         }
     }
 }

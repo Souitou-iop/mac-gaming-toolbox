@@ -47,6 +47,8 @@ final class AppModel: ObservableObject {
     @Published var availableWindows: [TargetWindowInfo] = []
     @Published var selectedWindowID: CGWindowID? = nil
     @Published var isScanningWindows: Bool = false
+    @Published var showingHUDAppLauncher: Bool = false
+    @Published var selectedHUDAppPaths: Set<String> = []
 
     private let privileged = PrivilegedHelperClient()
     private let configurationStore: ConfigurationStore
@@ -225,6 +227,61 @@ final class AppModel: ObservableObject {
             self.metalHUDEnabled = enabled
             return enabled ? tr("MetalHUD 已开启", "MetalHUD enabled") : tr("MetalHUD 已关闭", "MetalHUD disabled")
         }
+    }
+
+    func addAppToHUDList() {
+        let panel = NSOpenPanel()
+        panel.title = tr("添加游戏或应用程序至管理列表", "Add Game or App to Library", "ゲーム・アプリを一覧に追加")
+        panel.prompt = tr("添加至列表", "Add to List", "一覧に追加")
+        panel.directoryURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
+        panel.allowedContentTypes = [.application]
+        panel.allowsMultipleSelection = true
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.resolvesAliases = true
+        guard panel.runModal() == .OK else { return }
+
+        for url in panel.urls {
+            rememberMetalHUDApp(url)
+        }
+        setTransientStatus(.succeeded, message: tr("已添加 \(panel.urls.count) 个游戏/软件", "Added \(panel.urls.count) apps", "\(panel.urls.count) 個のアプリを追加しました"))
+    }
+
+    func openHUDAppLauncher() {
+        if selectedHUDAppPaths.isEmpty {
+            selectedHUDAppPaths = Set(configuration.recentMetalHUDApps.map(\.path))
+        }
+        showingHUDAppLauncher = true
+    }
+
+    func launchSelectedHUDApps(_ paths: [String]) {
+        guard !paths.isEmpty else {
+            setTransientStatus(.failed, message: tr("请先勾选要启动的游戏", "Please select at least one game", "起動するゲームを選択してください"))
+            return
+        }
+
+        showingHUDAppLauncher = false
+        runTask(tr("正在启动所选游戏并注入 Metal HUD…", "Launching selected games with Metal HUD…", "選択したゲームを起動中…")) {
+            var launchedNames: [String] = []
+            for path in paths {
+                let applicationURL = URL(fileURLWithPath: path)
+                let effectiveOpts = self.effectiveOptionsForApp(path: path)
+                try? await self.gamingService.launchWithMetalHUD(applicationPath: path, options: effectiveOpts)
+                self.rememberMetalHUDApp(applicationURL)
+                let name = applicationURL.deletingPathExtension().lastPathComponent
+                launchedNames.append(name)
+            }
+            return tr("已启动 \(launchedNames.count) 个游戏：\(launchedNames.joined(separator: ", "))",
+                      "Launched \(launchedNames.count) games: \(launchedNames.joined(separator: ", "))",
+                      "\(launchedNames.count) 個のゲームを起動しました：\(launchedNames.joined(separator: ", "))")
+        }
+    }
+
+    func removeAppFromHUDList(path: String) {
+        configuration.recentMetalHUDApps.removeAll { $0.path == path }
+        configuration.perAppHUDProfiles.removeAll { $0.appPath == path }
+        selectedHUDAppPaths.remove(path)
+        saveConfiguration()
     }
 
     func launchAppWithMetalHUD() {
