@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2014.0%2B-lightgrey.svg)](https://apple.com/macos)
 [![Architecture](https://img.shields.io/badge/Architecture-Apple%20Silicon%20(ARM64)-brightgreen.svg)](https://apple.com/mac)
-[![Release](https://img.shields.io/badge/Release-v4.0.8-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
+[![Release](https://img.shields.io/badge/Release-v4.0.9-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
 
 > **本リポジトリについて**：本プロジェクトは、原作者 **[@我是艾文喵 (Iven)](https://github.com/aiwentongxue)** 氏によるオープンソースプロジェクト [aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox) をベースに、UIの完全刷新・機能拡張・安定性向上を行ったフォーク版（Fork）です。
 
@@ -88,7 +88,7 @@
 
 ## 📋 機能比較表 (Comparison)
 
-| 機能 / 特徴 | 元のバージョン (Upstream) | 本フォーク強化版 (v4.0.8) |
+| 機能 / 特徴 | 元のバージョン (Upstream) | 本フォーク強化版 (v4.0.9) |
 | :--- | :---: | :---: |
 | **超解像・動的補フレーム** | なし | **ゼロ遅延ハードウェア外挿 (2x-4x)、MetalFX超解像、CAS、TAA/SMAA/FXAA** |
 | **UI アーキテクチャ** | 従来のフローティングウィンドウ / モーダル | 現代的なネイティブサイドバー (`NavigationSplitView`) |

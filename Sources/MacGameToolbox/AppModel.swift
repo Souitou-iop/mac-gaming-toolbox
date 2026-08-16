@@ -77,7 +77,7 @@ final class AppModel: ObservableObject {
     func launch() {
         guard !didLaunch else { return }
         didLaunch = true
-        DiagnosticFileLogger.write("App launched, version 4.0.8")
+        DiagnosticFileLogger.write("App launched, version 4.0.9")
         Task {
             do {
                 configuration = try await configurationStore.load()
@@ -465,6 +465,13 @@ final class AppModel: ObservableObject {
 
     func removeRecentMetalHUDApp(_ app: RecentMetalHUDApp) {
         configuration.recentMetalHUDApps.removeAll { $0.path == app.path }
+        selectedHUDAppPaths.remove(app.path)
+        saveConfiguration()
+    }
+
+    func removeRecentMetalHUDApps(paths: Set<String>) {
+        configuration.recentMetalHUDApps.removeAll { paths.contains($0.path) }
+        selectedHUDAppPaths.subtract(paths)
         saveConfiguration()
     }
 

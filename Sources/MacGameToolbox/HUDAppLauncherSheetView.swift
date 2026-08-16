@@ -57,6 +57,22 @@ public struct HUDAppLauncherSheetView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
 
+                if !model.selectedHUDAppPaths.isEmpty {
+                    Button(role: .destructive) {
+                        withAnimation {
+                            model.removeRecentMetalHUDApps(paths: model.selectedHUDAppPaths)
+                        }
+                    } label: {
+                        Label(
+                            tr("删除所选 (\(model.selectedHUDAppPaths.count))", "Delete Selected (\(model.selectedHUDAppPaths.count))", "選択項目を削除 (\(model.selectedHUDAppPaths.count))"),
+                            systemImage: "trash"
+                        )
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    .controlSize(.small)
+                }
+
                 Spacer()
 
                 Button(tr("全选", "Select All", "すべて選択")) {
@@ -198,6 +214,21 @@ public struct HUDAppLauncherSheetView: View {
             }
 
             Spacer()
+
+            // Delete App Button in Red Text
+            Button(role: .destructive) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    model.selectedHUDAppPaths.remove(app.path)
+                    model.removeRecentMetalHUDApp(app)
+                }
+            } label: {
+                Text(tr("删除", "Delete", "削除"))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.red)
+            }
+            .buttonStyle(.bordered)
+            .tint(.red)
+            .controlSize(.small)
 
             // Single Game Direct Launch Button
             Button {

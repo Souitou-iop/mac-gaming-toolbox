@@ -4,6 +4,13 @@ All notable changes to **Mac 游戏工具箱 (Mac Gaming Toolbox)** will be docu
 
 ---
 
+## [v4.0.9] - 2026-08-16
+
+### 🗑️ 应用启动器删除与预选池管理能力增强 (App Launcher Item Deletion)
+- **为游戏选择启动器增加红字删除功能**：在「选择应用启动」二级弹窗的每个游戏行中加入高亮红色文本的「删除」操作按钮，支持一键移除不需要的预选应用；并在顶部操作栏新增「删除所选 (X)」批量移除按钮。
+
+---
+
 ## [v4.0.8] - 2026-08-16
 
 ### 🎨 按钮文本省略号彻底清理与视觉精细化 (Button Ellipsis Removal & Text Cleanup)
