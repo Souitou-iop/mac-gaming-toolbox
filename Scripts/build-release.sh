@@ -18,14 +18,24 @@ xcodebuild \
 
 APP="$DERIVED_DATA/Build/Products/Release/Mac 游戏工具箱.app"
 HELPER="$APP/Contents/Library/LaunchServices/MacGameToolboxPrivilegedHelper"
+
+# Detect persistent code signing identity
+SIGN_IDENTITY="-"
+if security find-identity -v -p codesigning 2>/dev/null | grep -q "MacGameToolbox Dev"; then
+    SIGN_IDENTITY="MacGameToolbox Dev"
+elif security find-identity -v -p codesigning 2>/dev/null | grep -q "Apple Development"; then
+    SIGN_IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null | grep "Apple Development" | head -n 1 | awk -F'"' '{print $2}')
+fi
+echo "==> 使用签名证书: $SIGN_IDENTITY"
+
 xattr -cr "$APP"
 xattr -d com.apple.FinderInfo "$APP" 2>/dev/null || true
 xattr -d 'com.apple.fileprovider.fpfs#P' "$APP" 2>/dev/null || true
-codesign --force --sign - -i macgametoolbox.helper "$HELPER"
+codesign --force --sign "$SIGN_IDENTITY" -i macgametoolbox.helper "$HELPER"
 for attempt in 1 2 3 4 5; do
   xattr -d com.apple.FinderInfo "$APP" 2>/dev/null || true
   xattr -d 'com.apple.fileprovider.fpfs#P' "$APP" 2>/dev/null || true
-  if codesign --force --sign - -i com.iven.macgametoolbox "$APP"; then break; fi
+  if codesign --force --sign "$SIGN_IDENTITY" -i com.iven.macgametoolbox "$APP"; then break; fi
   [[ "$attempt" == 5 ]] && exit 1
   sleep 0.2
 done

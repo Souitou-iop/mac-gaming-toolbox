@@ -136,9 +136,11 @@ public actor GamingService {
               FileManager.default.fileExists(atPath: applicationURL.path) else {
             throw ToolboxError.invalidPath(applicationPath)
         }
-        // 使用 `open --env` 将环境变量注入到目标进程；`/usr/bin/env VAR=val open -a` 方式
-        // 不会传递变量给 launchd 重新派生的 app 进程，导致 HUD 无法生效。
-        var arguments = ["-a", applicationURL.path]
+        // 1. 同步将目标 App 的 HUD 配置写入系统 launchctl 环境变量与 defaults，确保 Wine / CrossOver / 容器守护进程 100% 能够继承并读取
+        try? await setMetalHUD(enabled: true, options: options)
+
+        // 2. 同时使用 `open -n -a ... --env ...` 强制启动全新实例并精准注入环境变量，防止复用无环境变量的旧进程
+        var arguments = ["-n", "-a", applicationURL.path]
         for arg in Self.metalHUDEnvArgs(for: options, includeEnabled: true) {
             arguments.append(contentsOf: ["--env", arg])
         }
@@ -170,20 +172,14 @@ public actor GamingService {
         "MTL_HUD_CONFIG_FILE"
     ]
 
-    private static func metalHUDEnvArgs(for options: MetalHUDOptions, includeEnabled: Bool = false) -> [String] {
+    public static func metalHUDEnvArgs(for options: MetalHUDOptions, includeEnabled: Bool = false) -> [String] {
         var args: [String] = []
         if includeEnabled {
             args.append("MTL_HUD_ENABLED=1")
         }
-        if options.opacity != 1.0 {
-            args.append("MTL_HUD_OPACITY=\(String(format: "%g", options.opacity))")
-        }
-        if options.scale != 0.2 {
-            args.append("MTL_HUD_SCALE=\(String(format: "%g", options.scale))")
-        }
-        if options.alignment != "topright" {
-            args.append("MTL_HUD_ALIGNMENT=\(options.alignment)")
-        }
+        args.append("MTL_HUD_OPACITY=\(String(format: "%g", options.opacity))")
+        args.append("MTL_HUD_SCALE=\(String(format: "%g", options.scale))")
+        args.append("MTL_HUD_ALIGNMENT=\(options.alignment.lowercased())")
         if let v = options.positionX {
             args.append("MTL_HUD_POSITION_X=\(v)")
         }

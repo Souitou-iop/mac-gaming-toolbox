@@ -4,6 +4,18 @@ import SwiftUI
 import MacGameToolboxCore
 #endif
 
+// MARK: - App Version Helper
+
+public enum AppVersion {
+    public static var current: String {
+        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "4.1.0"
+    }
+
+    public static var displayString: String {
+        "v\(current)"
+    }
+}
+
 // MARK: - Native Theme Tokens & Semantic Helpers
 
 public enum GamingTheme {

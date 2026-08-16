@@ -77,7 +77,7 @@ final class AppModel: ObservableObject {
     func launch() {
         guard !didLaunch else { return }
         didLaunch = true
-        DiagnosticFileLogger.write("App launched, version 4.0.9")
+        DiagnosticFileLogger.write("App launched, version 4.1.0")
         Task {
             do {
                 configuration = try await configurationStore.load()

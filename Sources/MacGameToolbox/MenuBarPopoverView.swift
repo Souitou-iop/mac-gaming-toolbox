@@ -120,7 +120,7 @@ public struct MenuBarPopoverView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス"))
                     .font(.system(size: 13, weight: .bold))
-                Text("v4.0.5 • Apple Silicon")
+                Text("\(AppVersion.displayString) • Apple Silicon")
                     .font(.system(size: 9, weight: .medium).monospaced())
                     .foregroundStyle(.secondary)
             }

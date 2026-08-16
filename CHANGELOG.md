@@ -4,6 +4,15 @@ All notable changes to **Mac 游戏工具箱 (Mac Gaming Toolbox)** will be docu
 
 ---
 
+## [v4.1.0] - 2026-08-17
+
+### ⚡ Metal HUD 注入样式精准生效与全界面版本联动 (Metal HUD Injection Style & Dynamic Versioning)
+- **彻底修复 Metal HUD 环境变量缺省导致的样式未生效缺陷**：重构环境变量生成器，消除了旧代码在默认值时省略键名的逻辑，确保 `MTL_HUD_SCALE`、`MTL_HUD_OPACITY`、`MTL_HUD_ALIGNMENT` 与 `MTL_HUD_ELEMENTS` 在启动注入与系统级会话中 100% 显式传递生效。
+- **强制独立实例启动 (`open -n`)**：在单应用启动器中加入 `-n` 参数，强制系统创建干净且具备完整环境变量的全新子进程空间，杜绝复用后台无环境变量的旧进程。
+- **全界面版本号动态同步**：建立统一的 `AppVersion` 动态访问器，菜单栏 Popover、侧边栏、关于面板及系统日志统一由 Bundle 自动派生，彻底消除版本滞后。
+
+---
+
 ## [v4.0.9] - 2026-08-16
 
 ### 🗑️ 应用启动器删除与预选池管理能力增强 (App Launcher Item Deletion)

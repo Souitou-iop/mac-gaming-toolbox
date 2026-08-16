@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2014.0%2B-lightgrey.svg)](https://apple.com/macos)
 [![Architecture](https://img.shields.io/badge/Architecture-Apple%20Silicon%20(ARM64)-brightgreen.svg)](https://apple.com/mac)
-[![Release](https://img.shields.io/badge/Release-v4.0.9-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
+[![Release](https://img.shields.io/badge/Release-v4.1.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
 
 > **关于本仓库**：本项目是基于原作者 **[@我是艾文喵](https://github.com/aiwentongxue)** 的开源项目 [aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox) 进行深度重构与功能扩展的 Fork 分支版本。
 
@@ -88,7 +88,7 @@
 
 ## 📋 功能对比表 (Comparison)
 
-| 功能特性 | 原版 (Upstream) | 本 Fork 增强版 (v4.0.9) |
+| 功能特性 | 原版 (Upstream) | 本 Fork 增强版 (v4.1.0) |
 | :--- | :---: | :---: |
 | **画质超分与补帧** | 无 | **零延迟硬件外推 (2x-4x)、MetalFX 超分、CAS 锐化、TAA/SMAA/FXAA 抗锯齿** |
 | **界面架构** | 传统浮窗 / 弹窗堆叠 | 现代化 原生侧边栏 (`NavigationSplitView`) |

@@ -209,9 +209,12 @@ actor RecordingCommandRunner: CommandRunning {
     try await service.launchWithMetalHUD(applicationPath: application.path)
 
     let calls = await runner.calls
-    #expect(calls.count == 1)
-    #expect(calls.first?.0 == "/usr/bin/open")
-    #expect(calls.first?.1 == ["-a", application.path, "--env", "MTL_HUD_ENABLED=1"])
+    let openCall = try #require(calls.first(where: { $0.0 == "/usr/bin/open" }))
+    let args = openCall.1
+    #expect(args.contains("MTL_HUD_ENABLED=1"))
+    #expect(args.contains("MTL_HUD_SCALE=0.2"))
+    #expect(args.contains("MTL_HUD_ALIGNMENT=topright"))
+    #expect(args.contains("MTL_HUD_OPACITY=1"))
 }
 
 @Test func metalHUDOptionsRoundTripAndClampsOpacity() async throws {
@@ -300,8 +303,8 @@ actor RecordingCommandRunner: CommandRunning {
     )
 
     let calls = await runner.calls
-    #expect(calls.count == 1)
-    let arguments = try #require(calls.first?.1)
+    let openCall = try #require(calls.first(where: { $0.0 == "/usr/bin/open" }))
+    let arguments = openCall.1
     #expect(arguments.contains("MTL_HUD_ENABLED=1"))
     #expect(arguments.contains("MTL_HUD_OPACITY=0.6"))
     #expect(arguments.contains("MTL_HUD_SCALE=0.3"))
@@ -317,7 +320,7 @@ actor RecordingCommandRunner: CommandRunning {
     #expect(!arguments.contains(where: { $0.hasPrefix("MTL_HUD_METRIC_TIMEOUT=") }))
 }
 
-@Test func perAppMetalHUDLaunchDefaultsInjectsOnlyEnabled() async throws {
+@Test func perAppMetalHUDLaunchDefaultsInjectsConfiguredStyles() async throws {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     let application = root.appendingPathComponent("Example Game.app", isDirectory: true)
     try FileManager.default.createDirectory(at: application, withIntermediateDirectories: true)
@@ -328,9 +331,12 @@ actor RecordingCommandRunner: CommandRunning {
     try await service.launchWithMetalHUD(applicationPath: application.path, options: MetalHUDOptions())
 
     let calls = await runner.calls
-    #expect(calls.count == 1)
-    #expect(calls.first?.0 == "/usr/bin/open")
-    #expect(calls.first?.1 == ["-a", application.path, "--env", "MTL_HUD_ENABLED=1"])
+    let openCall = try #require(calls.first(where: { $0.0 == "/usr/bin/open" }))
+    let args = openCall.1
+    #expect(args.contains("MTL_HUD_ENABLED=1"))
+    #expect(args.contains("MTL_HUD_SCALE=0.2"))
+    #expect(args.contains("MTL_HUD_ALIGNMENT=topright"))
+    #expect(args.contains("MTL_HUD_OPACITY=1"))
 }
 
 @Test func globalSetMetalHUDClearsUnusedKeysAndSetsSpecifiedOptions() async throws {
