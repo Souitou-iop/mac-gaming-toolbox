@@ -178,6 +178,8 @@ struct DashboardView: View {
                         OverviewSectionView { target in
                             selectedCategory = target
                         }
+                    case .frameGen:
+                        FrameGenSectionView()
                     case .metalHUD:
                         MetalHUDSectionView()
                     case .gameBoost:

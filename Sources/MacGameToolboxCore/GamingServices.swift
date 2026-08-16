@@ -1,5 +1,7 @@
 import Foundation
 import AppKit
+import CoreGraphics
+import ApplicationServices
 
 public enum PrivilegedOperation: Sendable, Equatable {
     case healthCheck
@@ -908,7 +910,55 @@ public actor SystemHealthInspector {
             }
         }
 
-        // 3. Metal HUD Environment Check
+        // 3. Screen Recording Permission Check (For Frame Gen & Scaling) - 100% Passive & Non-intrusive
+        let screenCaptureGranted = CGPreflightScreenCaptureAccess()
+        if screenCaptureGranted {
+            items.append(HealthCheckItem(
+                nameZh: "屏幕录制权限 (超分与补帧)",
+                nameEn: "Screen Recording Access (Scaling & FG)",
+                nameJa: "画面収録権限（超解像・補フレーム）",
+                status: .healthy,
+                detailZh: "屏幕录制权限已授予，可正常使用游戏超分辨率与零延迟补帧。",
+                detailEn: "Screen recording permission granted for zero-latency frame generation and upscaling.",
+                detailJa: "画面収録権限が許可されており、超解像スケーリングと補フレームが利用可能です。"
+            ))
+        } else {
+            items.append(HealthCheckItem(
+                nameZh: "屏幕录制权限 (超分与补帧)",
+                nameEn: "Screen Recording Access (Scaling & FG)",
+                nameJa: "画面収録権限（超解像・補フレーム）",
+                status: .warning,
+                detailZh: "未授予（按需授权：仅在开启画质超分与补帧功能时需要，首次启动该功能时将自动引导授权）。",
+                detailEn: "Not granted (On-demand: only required when enabling Scaling & Frame Gen).",
+                detailJa: "未許可（オンデマンド：超解像・補フレーム機能の有効化時のみ必要、初回起動時に案内されます）。"
+            ))
+        }
+
+        // 4. Accessibility Permission Check (For Synthetic Cursor & Mouse Constraint) - 100% Passive
+        let accessibilityGranted = AXIsProcessTrusted()
+        if accessibilityGranted {
+            items.append(HealthCheckItem(
+                nameZh: "辅助功能权限 (光标锁定与约束)",
+                nameEn: "Accessibility Access (Mouse Lock)",
+                nameJa: "アクセシビリティ権限（マウス拘束）",
+                status: .healthy,
+                detailZh: "辅助功能权限已授予，可支持游戏内鼠标光标拘束锁定与合成硬件光标。",
+                detailEn: "Accessibility permission granted for mouse constraint and synthetic cursor.",
+                detailJa: "アクセシビリティ権限が許可されており、ゲーム内マウス拘束と合成カーソルが利用可能です。"
+            ))
+        } else {
+            items.append(HealthCheckItem(
+                nameZh: "辅助功能权限 (光标锁定与约束)",
+                nameEn: "Accessibility Access (Mouse Lock)",
+                nameJa: "アクセシビリティ権限（マウス拘束）",
+                status: .warning,
+                detailZh: "未授予（按需授权：仅在开启 ⌘⇧C 游戏光标锁定与约束时需要）。",
+                detailEn: "Not granted (On-demand: only required for ⌘⇧C mouse locking).",
+                detailJa: "未許可（オンデマンド：⌘⇧C によるマウス拘束機能の利用時のみ必要）。"
+            ))
+        }
+
+        // 5. Metal HUD Environment Check
         let hudEnvResult = try? await runner.run("/bin/launchctl", arguments: ["getenv", "MTL_HUD_ENABLED"])
         let hudActive = hudEnvResult?.outputString == "1"
         items.append(HealthCheckItem(
@@ -921,7 +971,7 @@ public actor SystemHealthInspector {
             detailJa: hudActive ? "グローバル HUD 変数が有効化されています (MTL_HUD_ENABLED=1)。" : "HUD 環境変数は待機状態です（現在は無効）。"
         ))
 
-        // 4. Storage & Cache Access Check
+        // 6. Storage & Cache Access Check
         let cachesPath = fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Caches").path
         let cachesWritable = fileManager.isWritableFile(atPath: cachesPath)
         items.append(HealthCheckItem(

@@ -51,7 +51,7 @@ public struct SidebarLayoutView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Macゲームツールボックス"))
                         .font(.headline)
-                    Text("v3.1.0")
+                    Text("v4.0.0")
                         .font(.caption2.monospaced())
                         .foregroundStyle(.secondary)
                 }
@@ -143,6 +143,8 @@ public struct SidebarLayoutView: View {
             OverviewSectionView { target in
                 withAnimation { selectedCategory = target }
             }
+        case .frameGen:
+            FrameGenSectionView()
         case .metalHUD:
             MetalHUDSectionView()
         case .gameBoost:

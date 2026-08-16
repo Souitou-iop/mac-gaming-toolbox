@@ -57,7 +57,7 @@ public struct AboutSectionView: View {
                     HStack(spacing: 8) {
                         Text(tr("Mac 游戏工具箱", "Mac Gaming Toolbox", "Mac ゲーミングツールボックス"))
                             .font(.title2.bold())
-                        Text("v3.1.0")
+                        Text("v4.0.0")
                             .font(.subheadline.monospaced())
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -144,6 +144,20 @@ public struct AboutSectionView: View {
                         .font(.caption)
                         Spacer()
                     }
+
+                    HStack(spacing: 12) {
+                        Text(tr("生态致谢项目：", "Special Thanks:", "特別謝辞："))
+                            .font(.caption.bold())
+                            .frame(width: 120, alignment: .leading)
+                        HStack(spacing: 12) {
+                            Text("MetalGoose (Zero-latency FG & Shaders)")
+                            Text("·").foregroundStyle(.secondary)
+                            Text("MetalDuck (Lossless Scaling & DRS)")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        Spacer()
+                    }
                 }
             }
             .padding(8)
@@ -155,6 +169,12 @@ public struct AboutSectionView: View {
     private var forkImprovementsBox: some View {
         GroupBox(label: Label(tr("本分支版本增强与改进", "Fork Enhancements", "本フォーク版の強化・改善機能"), systemImage: "sparkles").font(.headline)) {
             VStack(alignment: .leading, spacing: 10) {
+                featureBullet(
+                    title: tr("画质超分与零延迟动态补帧 (融合 MetalGoose & MetalDuck)", "Resolution Scaling & Frame Generation", "超解像スケーリングと動的補フレーム"),
+                    desc: tr("基于媒体引擎与 Apple Silicon 硬件加速，实现零延迟运动外推 (2x-4x 补帧)、MetalFX 空间超分辨率、CAS 锐化、SMAA 抗锯齿与 6-Sigma EMA 场景剪辑保护。",
+                             "Hardware-accelerated zero-latency motion extrapolation (2x-4x FG), MetalFX spatial upscaling, CAS sharpening, SMAA, and 6-Sigma scene-cut protection.",
+                             "Media EngineとApple Siliconを活用したゼロ遅延運動外挿（2x〜4x補正）、MetalFX超解像、CAS鮮鋭化、SMAA、6-Sigmaシーンチェンジ保護。")
+                )
                 featureBullet(
                     title: tr("全套自定义 Metal HUD 调优、单 App 方案与性能快照", "Custom Metal HUD Tuning & Performance Snapshots", "Metal HUD 完全カスタマイズ・個別プロファイル・スナップショット"),
                     desc: tr("支持 10%~100% 缩放、0~100% 透明度、四角方位、23 项指标带单位示例、单游戏专属 HUD 方案绑定与一键导出 Markdown 性能诊断快照报告。",

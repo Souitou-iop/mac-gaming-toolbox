@@ -2,6 +2,8 @@ import AppKit
 import Combine
 import Foundation
 import UniformTypeIdentifiers
+import Carbon.HIToolbox
+import ApplicationServices
 #if SWIFT_PACKAGE
 import MacGameToolboxCore
 #endif
@@ -41,6 +43,10 @@ final class AppModel: ObservableObject {
     @Published var isBackingUpSave = false
     @Published var healthReport: SystemHealthReport?
     @Published var isCheckingHealth = false
+    @Published var isScalingActive: Bool = false
+    @Published var availableWindows: [TargetWindowInfo] = []
+    @Published var selectedWindowID: CGWindowID? = nil
+    @Published var isScanningWindows: Bool = false
 
     private let privileged = PrivilegedHelperClient()
     private let configurationStore: ConfigurationStore
@@ -69,7 +75,7 @@ final class AppModel: ObservableObject {
     func launch() {
         guard !didLaunch else { return }
         didLaunch = true
-        DiagnosticFileLogger.write("App launched, version 3.1.0")
+        DiagnosticFileLogger.write("App launched, version 4.0.0")
         Task {
             do {
                 configuration = try await configurationStore.load()
@@ -91,7 +97,126 @@ final class AppModel: ObservableObject {
             }
             startAutomaticMountMonitoring()
             checkSystemHealth()
+            setupScalingHotkeys()
         }
+    }
+
+    private func setupScalingHotkeys() {
+        // Cmd + Shift + T (keyCode 17 for 'T', modifiers cmdKey | shiftKey = 0x0100 | 0x0200)
+        ScalingHotkeyManager.shared.register(keyCode: 17, modifiers: UInt32(cmdKey | shiftKey)) { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.toggleScaling()
+            }
+        }
+        // Cmd + Shift + C (keyCode 8 for 'C')
+        ScalingHotkeyManager.shared.register(keyCode: 8, modifiers: UInt32(cmdKey | shiftKey)) {
+            Task { @MainActor in
+                _ = MouseConstraintManager.shared.toggle()
+            }
+        }
+    }
+
+    var isScreenCapturePermissionGranted: Bool {
+        CGPreflightScreenCaptureAccess()
+    }
+
+    var isAccessibilityPermissionGranted: Bool {
+        AXIsProcessTrusted()
+    }
+
+    func requestScreenRecordingPermission() {
+        let granted = CGRequestScreenCaptureAccess()
+        if !granted {
+            openScreenRecordingSettings()
+        }
+        refreshAvailableWindows()
+        checkSystemHealth()
+    }
+
+    func requestAccessibilityPermission() {
+        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
+        let trusted = AXIsProcessTrustedWithOptions(options)
+        if !trusted {
+            openAccessibilitySettings()
+        }
+        checkSystemHealth()
+    }
+
+    func openScreenRecordingSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    func openAccessibilitySettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    func refreshAvailableWindows() {
+        guard !isScanningWindows else { return }
+        isScanningWindows = true
+        Task {
+            if let windows = try? await WindowCaptureService.getAvailableWindows() {
+                self.availableWindows = windows
+                if self.selectedWindowID == nil || !windows.contains(where: { $0.id == self.selectedWindowID }) {
+                    self.selectedWindowID = windows.first?.id
+                }
+            }
+            self.isScanningWindows = false
+        }
+    }
+
+    func toggleScaling() {
+        if isScalingActive {
+            stopScaling()
+        } else {
+            startScaling()
+        }
+    }
+
+    func startScaling() {
+        if !isScreenCapturePermissionGranted {
+            _ = CGRequestScreenCaptureAccess()
+            setTransientStatus(.failed, message: tr("请先在系统设置中允许屏幕录制权限", "Please grant Screen Recording permission in System Settings"))
+            openScreenRecordingSettings()
+            return
+        }
+
+        guard let windowID = selectedWindowID,
+              let targetWindow = availableWindows.first(where: { $0.id == windowID }) else {
+            refreshAvailableWindows()
+            setTransientStatus(.failed, message: tr("请先选择目标游戏窗口", "Please select a target window"))
+            return
+        }
+
+        Task {
+            let success = await ScalingOverlayController.shared.start(
+                targetWindow: targetWindow,
+                settings: configuration.scalingSettings
+            )
+            if success {
+                isScalingActive = true
+                setTransientStatus(.succeeded, message: tr("已启动画质超分与补帧 (按 ⌘⇧T 可随时关闭)", "Scaling & Frame Gen started (Press ⌘⇧T to toggle)"))
+            } else {
+                setTransientStatus(.failed, message: tr("启动失败，请检查屏幕录制权限与窗口状态", "Failed to start, check Screen Recording permission"))
+            }
+        }
+    }
+
+    func stopScaling() {
+        Task {
+            await ScalingOverlayController.shared.stop()
+            MouseConstraintManager.shared.disable()
+            isScalingActive = false
+            setTransientStatus(.succeeded, message: tr("已关闭画质超分与补帧", "Scaling & Frame Gen stopped"))
+        }
+    }
+
+    func updateScalingSettings(_ settings: ScalingSettings) {
+        configuration.scalingSettings = settings
+        saveConfiguration()
     }
 
     func setMetalHUD(_ enabled: Bool) {

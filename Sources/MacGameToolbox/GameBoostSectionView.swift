@@ -7,6 +7,10 @@ import MacGameToolboxCore
 public struct GameBoostSectionView: View {
     @EnvironmentObject private var model: AppModel
 
+    private var isSteamDeckActive: Bool {
+        model.configuration.hostnameBackup != nil
+    }
+
     public init() {}
 
     public var body: some View {
@@ -15,21 +19,24 @@ public struct GameBoostSectionView: View {
             GamingSectionHeader(
                 icon: "bolt.fill",
                 title: tr("游戏加速与启动优化", "Game Boost & Launch Assistant", "ゲーム高速化と起動最適化"),
-                subtitle: tr("游戏专注防休眠、Wine 进程算力提速、手柄低延迟与启动辅助", "Gaming focus booster, Wine process priority tuning, controller latency & launch assistance", "ゲーム集中・スリープ防止、Wineプロセスの優先度最適化、コントローラー低遅延化、起動アシスタント"),
+                subtitle: tr("游戏专注防休眠、Wine 进程算力提速、反作弊主机名伪装与启动辅助", "Gaming focus booster, Wine process priority tuning, anti-cheat hostname spoofing & launch assistant", "ゲーム集中・スリープ防止、Wineプロセスの優先度最適化、アンチチート対策ホスト名偽装、起動アシスタント"),
                 accentColor: .cyan
             )
 
-            // Gaming Focus & Anti-Sleep Mode Box (Direction 3)
+            // 1. Gaming Focus & Anti-Sleep Mode Box
             gamingFocusBox
 
-            // CrossOver & Wine Priority Boost Box
+            // 2. CrossOver & Wine Priority Boost Box
             winePriorityBoostBox
 
-            // Controller Latency & Game Mode Tips Box (Direction 3)
-            controllerAndGameModeBox
+            // 3. SteamDeck Hostname Spoofing Box
+            steamDeckSpoofBox
 
-            // HoYoGames Launch Assistant Box
+            // 4. HoYoGames Launch Assistant Box
             hoYoAssistantBox
+
+            // 5. Controller Latency & Game Mode Tips Box (Bottom)
+            controllerAndGameModeBox
         }
     }
 
@@ -113,39 +120,46 @@ public struct GameBoostSectionView: View {
         }
     }
 
-    // MARK: - Controller Latency & Game Mode Tips Box
+    // MARK: - SteamDeck Spoofing Box
 
-    private var controllerAndGameModeBox: some View {
-        GroupBox(label: Label(tr("手柄蓝牙低延迟与着色器科普", "Controller Latency & Shader Optimization", "コントローラーBluetooth低遅延化・シェーダー解説"), systemImage: "gamecontroller.fill").font(.headline)) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "antenna.radiowaves.left.and.right")
-                        .foregroundStyle(.blue)
-                        .font(.title3)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(tr("macOS 游戏模式 (Game Mode) 极速唤醒", "macOS Game Mode Low-Latency Trigger", "macOS ゲームモードによる低遅延化"))
-                            .font(.caption.bold())
-                        Text(tr("系统“游戏模式”会将 PS5/Xbox 蓝牙手柄与 AirPods 的采样轮询率翻倍，大幅降低无线输入与音频延迟。建议在游戏内开启“全屏独占模式 (Full Screen)”以确保稳定触发 Game Mode。",
-                                "macOS Game Mode doubles Bluetooth polling rates for gamepads and AirPods, halving wireless latency. Use Full Screen mode in-game for automatic activation.",
-                                "macOSの「ゲームモード」は、PS5/XboxコントローラーやAirPodsのBluetoothサンプリングレートを2倍に引き上げ、入力・音声遅延を大幅に削減します。安定して起動させるため、ゲーム内設定で「フルスクリーン表示」を選択することを推奨します。"))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+    private var steamDeckSpoofBox: some View {
+        GroupBox(label:
+            HStack(spacing: 8) {
+                Label(tr("切换到 SteamDeck 主机名模式", "SteamDeck Mode Spoofing", "SteamDeck ホスト名偽装モード"), systemImage: "rectangle.2.swap")
+                    .font(.headline)
+                LiveStatusBadge(
+                    isSteamDeckActive ? .active : .idle,
+                    title: isSteamDeckActive ? tr("已伪装为 SteamDeck", "Spoofed as SteamDeck", "SteamDeckに偽装中") : tr("原生 Mac 主机名", "Native Mac Hostname", "Mac標準ホスト名")
+                )
+            }
+        ) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(tr("部分游戏的反作弊系统对 SteamDeck 开放后门，将 Mac 主机名临时伪装为 steamdeck 可绕过限制直接进入游戏。",
+                        "Some anti-cheat systems whitelist SteamDeck. Temporarily spoofing macOS hostname to 'steamdeck' allows games to run.",
+                        "一部のゲームのアンチチートはSteamDeck向けに制限を緩和しています。Macのホスト名を一時的に「steamdeck」に偽装することで互換性を向上させます。"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
                 Divider()
 
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "cpu.fill")
-                        .foregroundStyle(.green)
-                        .font(.title3)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(tr("着色器动态编译卡顿 (Shader Stutter) 提示", "Shader Compilation Stutter Notice", "シェーダー動的コンパイルに関するヒント"))
-                            .font(.caption.bold())
-                        Text(tr("首次进入新游戏场景时，GPTK 正在后台将 DirectX 着色器动态编译并缓存在 Metal 中，可能出现短暂掉帧，属于正常转译机制。持续游玩 5~10 分钟着色器缓存建立后，游戏帧率将趋于平稳丝滑。",
-                                "Entering new scenes triggers DirectX-to-Metal shader compilation. Temporary frame drops are normal and will smooth out after 5-10 minutes of caching.",
-                                "新しいシーンに初めて入る際、GPTKがバックグラウンドでDirectXシェーダーをMetal用にコンパイルしてキャッシュするため、一時的なカクつきが生じることがあります。5〜10分プレイしてキャッシュが蓄積されるとフレームレートは滑らかになります。"))
-                            .font(.caption2)
+                HStack {
+                    Button {
+                        model.toggleSteamDeck()
+                    } label: {
+                        Label(
+                            isSteamDeckActive ? tr("恢复为原始主机名", "Restore Original Hostname", "元のホスト名に復元") : tr("一键开启 SteamDeck 伪装", "Enable SteamDeck Spoofing", "SteamDeck偽装を有効化"),
+                            systemImage: isSteamDeckActive ? "arrow.counterclockwise" : "shield.lefthalf.filled"
+                        )
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(isSteamDeckActive ? .red : .purple)
+                    .controlSize(.regular)
+
+                    Spacer()
+
+                    if let backup = model.configuration.hostnameBackup {
+                        Text(tr("原始名称：\(backup.computerName)", "Original: \(backup.computerName)", "元の名前：\(backup.computerName)"))
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -216,6 +230,47 @@ public struct GameBoostSectionView: View {
                     }
 
                     Spacer()
+                }
+            }
+            .padding(6)
+        }
+    }
+
+    // MARK: - Controller Latency & Game Mode Tips Box
+
+    private var controllerAndGameModeBox: some View {
+        GroupBox(label: Label(tr("手柄蓝牙低延迟与着色器科普", "Controller Latency & Shader Optimization", "コントローラーBluetooth低遅延化・シェーダー解説"), systemImage: "bookmark.fill").font(.headline)) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .foregroundStyle(.blue)
+                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(tr("macOS 游戏模式 (Game Mode) 极速唤醒", "macOS Game Mode Low-Latency Trigger", "macOS ゲームモードによる低遅延化"))
+                            .font(.caption.bold())
+                        Text(tr("系统“游戏模式”会将 PS5/Xbox 蓝牙手柄与 AirPods 的采样轮询率翻倍，大幅降低无线输入与音频延迟。建议在游戏内开启“全屏独占模式 (Full Screen)”以确保稳定触发 Game Mode。",
+                                "macOS Game Mode doubles Bluetooth polling rates for gamepads and AirPods, halving wireless latency. Use Full Screen mode in-game for automatic activation.",
+                                "macOSの「ゲームモード」は、PS5/XboxコントローラーやAirPodsのBluetoothサンプリングレートを2倍に引き上げ、入力・音声遅延を大幅に削減します。安定して起動させるため、ゲーム内設定で「フルスクリーン表示」を選択することを推奨します。"))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Divider()
+
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "cpu.fill")
+                        .foregroundStyle(.green)
+                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(tr("着色器动态编译卡顿 (Shader Stutter) 提示", "Shader Compilation Stutter Notice", "シェーダー動的コンパイルに関するヒント"))
+                            .font(.caption.bold())
+                        Text(tr("首次进入新游戏场景时，GPTK 正在后台将 DirectX 着色器动态编译并缓存在 Metal 中，可能出现短暂掉帧，属于正常转译机制。持续游玩 5~10 分钟着色器缓存建立后，游戏帧率将趋于平稳丝滑。",
+                                "Entering new scenes triggers DirectX-to-Metal shader compilation. Temporary frame drops are normal and will smooth out after 5-10 minutes of caching.",
+                                "新しいシーンに初めて入る際、GPTKがバックグラウンドでDirectXシェーダーをMetal用にコンパイルしてキャッシュするため、一時的なカクつきが生じることがあります。5〜10分プレイしてキャッシュが蓄積されるとフレームレートは滑らかになります。"))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .padding(6)

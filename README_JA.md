@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2014.0%2B-lightgrey.svg)](https://apple.com/macos)
 [![Architecture](https://img.shields.io/badge/Architecture-Apple%20Silicon%20(ARM64)-brightgreen.svg)](https://apple.com/mac)
-[![Release](https://img.shields.io/badge/Release-v3.1.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
+[![Release](https://img.shields.io/badge/Release-v4.0.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
 
 > **本リポジトリについて**：本プロジェクトは、原作者 **[@我是艾文喵 (Iven)](https://github.com/aiwentongxue)** 氏によるオープンソースプロジェクト [aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox) をベースに、UIの完全刷新・機能拡張・安定性向上を行ったフォーク版（Fork）です。
 
@@ -33,13 +33,20 @@
 
 ## 🚀 本フォーク版の強化・拡張機能 (Fork Enhancements)
 
-本フォーク版では、元の利便性をそのままに、macOS ネイティブの操作性、詳細な Metal パフォーマンス測定、セーブデータ保全、多言語対応などを大幅に強化しています：
+本フォーク版では、元の利便性をそのままに、macOS ネイティブの操作性、超解像スケーリング、ゼロ遅延動的補フレーム、詳細な Metal パフォーマンス測定、セーブデータ保全、多言語対応などを大幅に強化しています：
 
-### 1. 🎨 macOS ネイティブサイドバー UI への刷新
+### 1. ⚡ 超解像スケーリングとゼロ遅延動的補フレーム (MetalGoose & MetalDuck 統合)
+- **ゼロ遅延ハードウェア運動外挿 (2x / 3x / 4x 補正)**：Apple Silicon の Media Engine と Metal Compute Shader を活用し、入力遅延を追加することなく（0 ms 追加遅延）フレームレートを 2倍・3倍・4倍に向上。
+- **MetalFX 空間超解像 (Spatial Upscaling)**：33%、50%、67%、75% のレンダリング解像度から高精細な Retina/4K 表示へアップスケールし、重量級ゲームの GPU 負荷を大幅に削減。
+- **CAS 鮮鋭化 & SMAA アンチエイリアス**：コントラスト適応型鮮鋭化（CAS）と 3-pass SMAA / FXAA 形態学的アンチエイリアスにより、ボケやジャギーを徹底的に除去。
+- **適応型 6-Sigma シーンチェンジ保護**：64x64 輝度グリッドと動的 EMA アルゴリズムにより、カメラの瞬間切り替え時のモーフィングや画面の歪みを完全に抑止。
+- **グローバルショートカット & 合成ハードウェアカーソル**：`⌘⇧T` でいつでも補正オン/オフ、`⌘⇧C` でマウス拘束切り替え、高リフレッシュレート対応の合成カーソル描画に対応。
+
+### 2. 🎨 macOS ネイティブサイドバー UI への刷新
 - 従来の階層モーダルやダイアログを撤廃し、Apple HIG に完全準拠した `NavigationSplitView` サイドバー構成に刷新。
-- 標準 `GroupBox` コントロールを採用し、システムの外観（ダーク/ライトモード）に自然に馴染む洗練されたデザイン。
+- 標準 `GroupBox` コントロールを採用し、システムの外観（ダーク/ライトモード）に自然に馴染む洗练されたデザイン。
 
-### 2. 📊 Metal HUD 詳細パラメータ調有 & 23項目の表示指標
+### 3. 📊 Metal HUD 詳細パラメータ調有 & 23項目の表示指標
 - **外観の自由調整**：10%〜100% のスケールスライダー、0〜100% の不透明度、画面四隅（右上/左上/右下/左下）の配置に対応。
 - **23項目の表示指標**：FPS、GPU処理時間、表示遅延、レイヤースケール、シェーダーコンパイル状況など、各項目に**単位・数値例**を明記。
 - **高度なトレーシング**：HUD デバッグログ、シェーダーコンパイルログ、GPU エンコーダタイムラインの記録に対応。
@@ -81,8 +88,9 @@
 
 ## 📋 機能比較表 (Comparison)
 
-| 機能 / 特徴 | 元のバージョン (Upstream) | 本フォーク強化版 (v3.1.0) |
+| 機能 / 特徴 | 元のバージョン (Upstream) | 本フォーク強化版 (v4.0.0) |
 | :--- | :---: | :---: |
+| **超解像・動的補フレーム** | なし | **ゼロ遅延ハードウェア外挿 (2x-4x)、MetalFX超解像、CAS、TAA/SMAA/FXAA** |
 | **UI アーキテクチャ** | 従来のフローティングウィンドウ / モーダル | 現代的なネイティブサイドバー (`NavigationSplitView`) |
 | **起動時の動作** | 起動時に管理者パスワードを要求する場合あり | **完全パスワード不要の被動診断（特権時のみ認証）** |
 | **Metal HUD 調整** | 全体オン/オフ・簡易起動 | **10-100%スケール、不透明度、四隅配置、23項目（単位例付き）** |

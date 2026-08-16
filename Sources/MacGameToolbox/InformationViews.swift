@@ -6,6 +6,26 @@ struct ChangelogView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("4.0.0") {
+                    Text(tr("【画质超分与补帧】融合 MetalGoose 与 MetalDuck 优势，打造 macOS 专属无损画质与动态插帧引擎",
+                            "Integrated super resolution and zero-latency frame generation engine combining MetalGoose & MetalDuck",
+                            "【超解像と補フレーム】MetalGooseとMetalDuckの長所を統合し、macOS専用の動的補フレームエンジンを新搭載"))
+                    Text(tr("【零延迟硬件外推】利用 Apple Silicon 媒体引擎 (Media Engine) 硬件加速与 Metal 计算着色器，实现 0 ms 额外输入延迟的 2x/3x/4x 补帧",
+                            "Hardware motion extrapolation (2x/3x/4x FG) on Media Engine with 0 ms added latency",
+                            "【ゼロ遅延ハードウェア外挿】Media Engineを活用した0ms追加遅延の2x/3x/4x補フレーム"))
+                    Text(tr("【MetalFX 空间超分辨率】支持 33%、50%、67%、75% 及原生缩放，以更低 GPU 渲染成本输出高清画面",
+                            "MetalFX spatial upscaling supporting 33%, 50%, 67%, 75% render scales",
+                            "【MetalFX超解像】33%〜75%のレンダリング解像度から高精細にアップスケール"))
+                    Text(tr("【后处理画质管线】内置 CAS 对比度自适应锐化与 FXAA / SMAA / TAA (时域重投影抗锯齿) 完整抗锯齿方案",
+                            "Full post-processing pipeline with CAS sharpening, FXAA, SMAA, and TAA",
+                            "【画質処理パイプライン】CAS鮮鋭化、FXAA、SMAA、TAA（テンポラルアンチエイリアス）を完備"))
+                    Text(tr("【自适应场景保护】64x64 亮度网格与 6-Sigma EMA 场景剪辑检测，镜头切换瞬间回退直通，杜绝形变撕裂",
+                            "Adaptive 6-Sigma EMA scene-cut protection preventing morphing on camera cuts",
+                            "【シーンチェンジ保護】6-Sigma EMAによる適応型シーンチェンジ検出で歪み・ティアリングを防止"))
+                    Text(tr("【高刷合成光标与快捷键】全局快捷键 ⌘⇧T 开关、⌘⇧C 光标约束锁定与高刷硬件合成光标",
+                            "Global shortcuts (⌘⇧T / ⌘⇧C), mouse constraint lock, and synthetic cursor",
+                            "【合成カーソルとショートカット】⌘⇧T / ⌘⇧C グローバルショートカットとハードウェア合成カーソル"))
+                }
                 Section("3.1.0") {
                     Text(tr("【UI 重构】全面采用 macOS 原生 NavigationSplitView 侧边栏架构与标准控件，告别多层嵌套弹窗",
                             "Refactored UI to pure native NavigationSplitView sidebar and standard controls",

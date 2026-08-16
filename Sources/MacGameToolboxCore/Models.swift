@@ -386,6 +386,7 @@ public struct MetalHUDOptions: Codable, Equatable, Sendable {
 
 public enum NavigationCategory: String, Codable, CaseIterable, Identifiable, Sendable {
     case overview
+    case frameGen
     case metalHUD
     case gameBoost
     case storage
@@ -397,6 +398,7 @@ public enum NavigationCategory: String, Codable, CaseIterable, Identifiable, Sen
     public var titleZh: String {
         switch self {
         case .overview: return "概览与状态"
+        case .frameGen: return "画质与补帧"
         case .metalHUD: return "Metal HUD 调优"
         case .gameBoost: return "游戏加速与启动"
         case .storage: return "存储与磁盘"
@@ -408,6 +410,7 @@ public enum NavigationCategory: String, Codable, CaseIterable, Identifiable, Sen
     public var titleEn: String {
         switch self {
         case .overview: return "Overview"
+        case .frameGen: return "Scaling & Frame Gen"
         case .metalHUD: return "Metal HUD Tuner"
         case .gameBoost: return "Game Boost"
         case .storage: return "Storage & Disks"
@@ -419,6 +422,7 @@ public enum NavigationCategory: String, Codable, CaseIterable, Identifiable, Sen
     public var titleJa: String {
         switch self {
         case .overview: return "概要とステータス"
+        case .frameGen: return "超解像と補フレーム"
         case .metalHUD: return "Metal HUD 設定"
         case .gameBoost: return "ゲーム高速化・起動"
         case .storage: return "ストレージとセーブ"
@@ -430,6 +434,7 @@ public enum NavigationCategory: String, Codable, CaseIterable, Identifiable, Sen
     public var iconName: String {
         switch self {
         case .overview: return "gauge.with.dots.needle.67percent"
+        case .frameGen: return "sparkles.tv"
         case .metalHUD: return "chart.xyaxis.line"
         case .gameBoost: return "bolt.fill"
         case .storage: return "externaldrive.fill"
@@ -600,7 +605,6 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
     public var automaticallyRestoreMountsOnLaunch = false
     public var restorableDiskMounts: [DiskPreset] = []
     public var hostnameBackup: HostnameBackup?
-    public var customWallpaperPath: String?
     public var recentMetalHUDApps: [RecentMetalHUDApp] = []
     public var hoYoWaitSeconds = 15
     public var excludesSensitiveCacheFiles = true
@@ -609,14 +613,15 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
     public var perAppHUDProfiles: [PerAppMetalHUDProfile] = []
     public var savedGameBackupsDirectory: String?
     public var languagePreference: AppLanguagePreference = .system
+    public var scalingSettings: ScalingSettings = ScalingSettings()
 
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, didImportLegacyConfiguration, defaultPaths, diskPresets
-        case automaticallyRestoreMountsOnLaunch, restorableDiskMounts, hostnameBackup, customWallpaperPath
+        case automaticallyRestoreMountsOnLaunch, restorableDiskMounts, hostnameBackup
         case recentMetalHUDApps, hoYoWaitSeconds, excludesSensitiveCacheFiles, metalHUDOptions, navigationLayoutMode
-        case perAppHUDProfiles, savedGameBackupsDirectory, languagePreference
+        case perAppHUDProfiles, savedGameBackupsDirectory, languagePreference, scalingSettings
     }
 
     public init(from decoder: Decoder) throws {
@@ -628,7 +633,6 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
         automaticallyRestoreMountsOnLaunch = try container.decodeIfPresent(Bool.self, forKey: .automaticallyRestoreMountsOnLaunch) ?? false
         restorableDiskMounts = try container.decodeIfPresent([DiskPreset].self, forKey: .restorableDiskMounts) ?? []
         hostnameBackup = try container.decodeIfPresent(HostnameBackup.self, forKey: .hostnameBackup)
-        customWallpaperPath = try container.decodeIfPresent(String.self, forKey: .customWallpaperPath)
         recentMetalHUDApps = try container.decodeIfPresent([RecentMetalHUDApp].self, forKey: .recentMetalHUDApps) ?? []
         let decodedWait = try container.decodeIfPresent(Int.self, forKey: .hoYoWaitSeconds) ?? 15
         hoYoWaitSeconds = [10, 15, 20].contains(decodedWait) ? decodedWait : 15
@@ -638,6 +642,7 @@ public struct AppConfiguration: Codable, Equatable, Sendable {
         perAppHUDProfiles = try container.decodeIfPresent([PerAppMetalHUDProfile].self, forKey: .perAppHUDProfiles) ?? []
         savedGameBackupsDirectory = try container.decodeIfPresent(String.self, forKey: .savedGameBackupsDirectory)
         languagePreference = try container.decodeIfPresent(AppLanguagePreference.self, forKey: .languagePreference) ?? .system
+        scalingSettings = try container.decodeIfPresent(ScalingSettings.self, forKey: .scalingSettings) ?? ScalingSettings()
     }
 }
 

@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2014.0%2B-lightgrey.svg)](https://apple.com/macos)
 [![Architecture](https://img.shields.io/badge/Architecture-Apple%20Silicon%20(ARM64)-brightgreen.svg)](https://apple.com/mac)
-[![Release](https://img.shields.io/badge/Release-v3.1.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
+[![Release](https://img.shields.io/badge/Release-v4.0.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
 
 > **关于本仓库**：本项目是基于原作者 **[@我是艾文喵](https://github.com/aiwentongxue)** 的开源项目 [aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox) 进行深度重构与功能扩展的 Fork 分支版本。
 
@@ -33,13 +33,20 @@
 
 ## 🚀 相比原版的增强与重构功能 (Fork Enhancements)
 
-本分支在保持原版核心功能的基础上，针对界面交互、游戏性能监视、容器存档管理、运行稳定性与现代 macOS 体验进行了全方位的大幅增强：
+本分支在保持原版核心功能的基础上，针对界面交互、画质超分辨率、零延迟动态补帧、容器存档管理与现代 macOS 体验进行了全方位的大幅增强：
 
-### 1. 🎨 原生侧边栏 UI 重构 (Native macOS Sidebar Architecture)
+### 1. ⚡ 画质超分辨率与零延迟动态补帧 (融合 MetalGoose & MetalDuck)
+- **零延迟硬件运动外推 (2x / 3x / 4x 补帧)**：基于 Apple Silicon 媒体引擎 (Media Engine) 硬件加速与 Metal 计算着色器，在不增加输入延迟（0 ms 额外延迟）的前提下将帧率翻倍、三倍或四倍。
+- **MetalFX 空间超分辨率**：支持 33%、50%、67%、75% 及原生渲染缩放，在保证清晰锐利观感的同时大幅降低 3A 大作或兼容层转译游戏的 GPU 负载。
+- **CAS 对比度自适应锐化与 SMAA 抗锯齿**：集成 CAS 锐化与 3-pass SMAA / FXAA 形态学抗锯齿管线，完美消除捕捉与缩放后的锯齿模糊。
+- **自适应 6-Sigma 场景剪辑保护**：64x64 亮度网格与 EMA 动态方差算法，在镜头转场瞬切时自动回退为直通渲染，杜绝画面撕裂与形变。
+- **全局快捷热键与高刷合成光标**：支持 `⌘⇧T` 全局一键开关、`⌘⇧C` 鼠标约束锁定与硬件级高刷合成光标。
+
+### 2. 🎨 原生侧边栏 UI 重构 (Native macOS Sidebar Architecture)
 - 告别旧版本的弹窗堆叠与多层嵌套对话框，全面采用 Apple HIG 标准的 `NavigationSplitView` 侧边栏布局。
 - 采用原生标准 `GroupBox` 与控件体系，原生响应系统深色/浅色外观切换，轻量、丝滑且无视觉侵入。
 
-### 2. 📊 深度 Metal HUD 参数调优与 23 项指标 (Granular Metal HUD Tuning)
+### 3. 📊 深度 Metal HUD 参数调优与 23 项指标 (Granular Metal HUD Tuning)
 - **视觉全控**：支持 10%~100% 缩放比例、0~100% 透明度调节、屏幕四角（右上/左上/右下/左下）方位切换。
 - **23 项指标精细化勾选**：每项指标均配有中文解释与**实际数值/单位示例**（如 FPS、GPU 耗时、呈现延迟、图层缩放、着色器编译等）。
 - **高阶追踪**：支持 HUD 调试日志输出、着色器编译日志与 GPU 编码器时间线追踪。
@@ -81,8 +88,9 @@
 
 ## 📋 功能对比表 (Comparison)
 
-| 功能特性 | 原版 (Upstream) | 本 Fork 增强版 (v3.1.0) |
+| 功能特性 | 原版 (Upstream) | 本 Fork 增强版 (v4.0.0) |
 | :--- | :---: | :---: |
+| **画质超分与补帧** | 无 | **零延迟硬件外推 (2x-4x)、MetalFX 超分、CAS 锐化、TAA/SMAA/FXAA 抗锯齿** |
 | **界面架构** | 传统浮窗 / 弹窗堆叠 | 现代化 原生侧边栏 (`NavigationSplitView`) |
 | **启动体验** | 启动时可能触发提权授权弹窗 | **零弹窗无感启动**（完全只读体检，按需授权） |
 | **Metal HUD 调优** | 全局开关 / 基础启动 | **缩放、透明度、四角方位、23 项指标带单位示例** |

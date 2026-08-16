@@ -4,6 +4,27 @@ All notable changes to **Mac 游戏工具箱 (Mac Gaming Toolbox)** will be docu
 
 ---
 
+## [v4.0.0] - 2026-08-16
+
+### 🚀 重磅大版本特性：融合 MetalGoose 与 MetalDuck 优势功能 (Scaling & Frame Gen Engine)
+- **画质超分与零延迟动态补帧引擎 (Resolution Scaling & Frame Generation Engine)**：
+  - **双引擎动态插帧/补帧**：融合 VideoToolbox 媒体引擎 (Media Engine) 硬件运动估计与 Metal 着色器外推，实现 **0 ms 额外输入延迟的前向运动外推 (2x / 3x / 4x 补帧)**，并支持 MetalFX 光流插值。
+  - **MetalFX 空间超分辨率**：支持 33%、50%、67%、75% 及原生缩放，大幅降低 3A 大作与兼容层转译游戏的 GPU 渲染负载。
+  - **完整后处理画质管线**：内置 **CAS 对比度自适应锐化 (Contrast-Adaptive Sharpening)** 与 **FXAA / SMAA / TAA (时域重投影抗锯齿)** 四重抗锯齿方案，彻底抚平狗牙与高频闪烁。
+  - **自适应 6-Sigma 场景剪辑保护 (Scene-Cut Detection)**：基于 64x64 亮度网格与动态 EMA 阈值检测镜头切换，在转场瞬切时自动回退为直通渲染，杜绝画面形变与撕裂。
+  - **非侵入式 Metal 覆盖层与高刷合成光标**：支持针对任意游戏或模拟器窗口启动覆盖，并集成 `CGEventTap` 全局鼠标捕获与硬件级合成光标绘制。
+  - **全局一键快捷键**：支持全局热键 `⌘⇧T`（一键开启/暂停补帧）与 `⌘⇧C`（鼠标光标约束锁定）。
+  - **游戏内浮动性能遥测 HUD**：实时追踪显示 Capture FPS、Generated FPS、Output FPS 以及各类渲染参数。
+  - **快捷场景预设**：内置 3A 游戏均衡、极限帧率、原生画质增强与模拟器复古预设。
+- **页面排版与交互体验全面升级**：
+  - 将「切换到 SteamDeck 主机名模式」迁移至「游戏加速与启动」页面。
+  - 「HoYoGames 启动帮助」改造为标准卡片并入概览页面 3×2 对称网格。
+  - 科普卡片图标升级为 `bookmark.fill` 并置于设置底部。
+  - 系统权限与屏幕录制授权修复为一键主动触发 macOS 授权弹窗并登记系统列表。
+  - 全库代码精简与死代码彻底清理，采用 Metal JIT 运行时极速编译。
+
+---
+
 ## [v3.1.0] - 2026-08-16
 
 ### 🚀 新特性与亮点 (Highlights)

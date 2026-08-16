@@ -72,5 +72,8 @@ signing-config*
 /Mac游戏辅助工具3.1.0.command
 /Disk_Setup_V2.7.1.scpt.backup
 
-# IDE
+# IDE & Agent Caches
 .trae/
+.zcode/
+.agents/
+.codegraph/

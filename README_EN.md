@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2014.0%2B-lightgrey.svg)](https://apple.com/macos)
 [![Architecture](https://img.shields.io/badge/Architecture-Apple%20Silicon%20(ARM64)-brightgreen.svg)](https://apple.com/mac)
-[![Release](https://img.shields.io/badge/Release-v3.1.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
+[![Release](https://img.shields.io/badge/Release-v4.0.0-orange.svg)](https://github.com/Souitou-iop/mac-gaming-toolbox/releases)
 
 > **About this repository**: This project is an enhanced and refactored fork based on the original open-source utility created by **[@我是艾文喵 (Iven)](https://github.com/aiwentongxue)**: [aiwentongxue/mac-gaming-toolbox](https://github.com/aiwentongxue/mac-gaming-toolbox).
 
@@ -35,11 +35,18 @@ We extend our sincere gratitude and highest respect to the original author, **�
 
 While preserving all core capabilities of the upstream utility, this fork introduces extensive architectural, performance, and user experience enhancements tailored for modern macOS and Apple Silicon:
 
-### 1. 🎨 Native macOS Sidebar UI Architecture
+### 1. ⚡ Resolution Scaling & Zero-Latency Frame Generation (Combining MetalGoose & MetalDuck)
+- **Zero-Latency Hardware Motion Extrapolation (2x / 3x / 4x FG)**: Offloaded to the Apple Silicon Media Engine and Metal compute shaders to double, triple, or quadruple frame rates without adding any input latency (0 ms added latency).
+- **MetalFX Spatial Upscaling**: Upscales sub-native render targets (33%, 50%, 67%, 75%) to crisp Retina/4K outputs, drastically lowering GPU render overhead on heavy games.
+- **CAS Sharpening & SMAA Anti-Aliasing**: Integrated Contrast-Adaptive Sharpening and 3-pass SMAA / FXAA morphological anti-aliasing pipeline to eliminate blur and aliasing.
+- **Adaptive 6-Sigma Scene-Cut Protection**: Real-time 64x64 luma delta monitoring that gracefully falls back to passthrough during camera cuts, preventing morphing and distortion artifacts.
+- **Global Hotkeys & Synthetic High-Refresh Cursor**: Toggle frame generation anytime via `⌘⇧T`, trap/release mouse via `⌘⇧C`, and render a native hardware-accurate cursor sprite.
+
+### 2. 🎨 Native macOS Sidebar UI Architecture
 - Completely replaces legacy dialogs and modal sheets with a native `NavigationSplitView` sidebar layout adhering strictly to Apple's Human Interface Guidelines (HIG).
 - Uses standard native `GroupBox` and UI components with seamless dark/light mode switching.
 
-### 2. 📊 Granular Metal HUD Tuning & 23 Metrics
+### 3. 📊 Granular Metal HUD Tuning & 23 Metrics
 - **Visual Controls**: Full control over scale (10%~100%), opacity (0~100%), and 4-corner screen positioning (Top-Right, Top-Left, Bottom-Right, Bottom-Left).
 - **23 Granular Metric Toggles**: Each metric is documented with clear descriptions and **real-world unit/value examples** (FPS, GPU time, present delay, layer scale, shader compilation, etc.).
 - **Advanced Tracing**: Toggle HUD debug logging, shader compilation activity, and GPU encoder timeline graphs.
@@ -81,8 +88,9 @@ While preserving all core capabilities of the upstream utility, this fork introd
 
 ## 📋 Feature Comparison Table
 
-| Feature / Capability | Upstream (Original) | Enhanced Fork (v3.1.0) |
+| Feature / Capability | Upstream (Original) | Enhanced Fork (v4.0.0) |
 | :--- | :---: | :---: |
+| **Scaling & Frame Gen** | None | **0ms Hardware FG (2x-4x), MetalFX Upscaling, CAS, TAA/SMAA/FXAA** |
 | **UI Architecture** | Legacy Floating Windows / Sheets | Modern Native Sidebar (`NavigationSplitView`) |
 | **Startup Behavior** | May prompt for admin password on launch | **100% Passive Read-Only Check (Zero Prompts)** |
 | **Metal HUD Controls** | Global Switch / Basic Launch | **Scale, Opacity, 4 Corners, 23 Metrics with Examples** |

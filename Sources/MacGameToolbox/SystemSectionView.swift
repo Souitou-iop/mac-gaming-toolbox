@@ -7,10 +7,6 @@ import MacGameToolboxCore
 public struct SystemSectionView: View {
     @EnvironmentObject private var model: AppModel
 
-    private var isSteamDeckActive: Bool {
-        model.configuration.hostnameBackup != nil
-    }
-
     public init() {}
 
     public var body: some View {
@@ -19,7 +15,7 @@ public struct SystemSectionView: View {
             GamingSectionHeader(
                 icon: "gearshape.2.fill",
                 title: tr("系统工具与偏好设置", "System Tools & Preferences", "システムツールと環境設定"),
-                subtitle: tr("软件服务与权限状态体检、界面语言、反作弊主机名伪装与系统诊断", "Service & permission health diagnostics, language preferences, anti-cheat environment spoofing, and system tools", "サービス・権限状態の診断、表示言語設定、アンチチート対策ホスト名偽装、システム診断"),
+                subtitle: tr("软件服务与系统权限检测、界面语言设置与核心服务诊断修复", "Software service and permission health inspection, language preferences, and diagnostics", "サービス・システム権限の診断、表示言語設定、システム診断と修復"),
                 accentColor: .purple
             )
 
@@ -28,9 +24,6 @@ public struct SystemSectionView: View {
 
             // Service & Permission Health Inspector Box
             systemHealthBox
-
-            // SteamDeck Spoofing Box
-            steamDeckSpoofBox
 
             // Utilities & Info Grid
             HStack(spacing: 16) {
@@ -88,6 +81,10 @@ public struct SystemSectionView: View {
     private var systemHealthBox: some View {
         let isHealthy = model.healthReport?.allHealthy ?? false
         let hasLegacy = !(model.healthReport?.legacyHelpersFound.isEmpty ?? true)
+        let hasWarnings = (model.healthReport?.items.contains { $0.status == .warning } ?? false)
+
+        let badgeStyle: LiveStatusBadge.StatusType = isHealthy ? .active : (hasLegacy ? .warning : (hasWarnings ? .standby : .idle))
+        let badgeTitle: String = isHealthy ? tr("全部正常", "All Healthy", "すべて正常") : (hasLegacy ? tr("发现历史残留", "Legacy Residuals", "過去の残存ファイルを検出") : tr("就绪 (按需授权)", "Ready (On-Demand)", "待機中 (オンデマンド)"))
 
         return GroupBox(label:
             HStack(spacing: 8) {
@@ -95,8 +92,8 @@ public struct SystemSectionView: View {
                     .font(.headline)
                     .foregroundStyle(.purple)
                 LiveStatusBadge(
-                    isHealthy ? .active : (hasLegacy ? .warning : .idle),
-                    title: isHealthy ? tr("全部正常", "All Healthy", "すべて正常") : (hasLegacy ? tr("发现历史残留", "Legacy Residuals", "過去の残存ファイルを検出") : tr("就绪", "Ready", "準備完了"))
+                    badgeStyle,
+                    title: badgeTitle
                 )
             }
         ) {
@@ -112,26 +109,40 @@ public struct SystemSectionView: View {
                 // Health Items List
                 if let report = model.healthReport {
                     VStack(spacing: 8) {
-                        ForEach(report.items) { item in
-                            HStack(alignment: .top, spacing: 10) {
-                                Image(systemName: item.status.iconName)
-                                    .foregroundStyle(item.status == .healthy ? .green : (item.status == .warning ? .orange : .red))
-                                    .font(.subheadline)
-                                    .padding(.top, 1)
+	                        ForEach(report.items) { item in
+	                            HStack(alignment: .top, spacing: 10) {
+	                                Image(systemName: item.status.iconName)
+	                                    .foregroundStyle(item.status == .healthy ? .green : (item.status == .warning ? .orange : .red))
+	                                    .font(.subheadline)
+	                                    .padding(.top, 1)
 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(tr(item.nameZh, item.nameEn, item.nameJa))
-                                        .font(.caption.bold())
-                                    Text(tr(item.detailZh, item.detailEn, item.detailJa))
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
+	                                VStack(alignment: .leading, spacing: 2) {
+	                                    Text(tr(item.nameZh, item.nameEn, item.nameJa))
+	                                        .font(.caption.bold())
+	                                    Text(tr(item.detailZh, item.detailEn, item.detailJa))
+	                                        .font(.caption2)
+	                                        .foregroundStyle(.secondary)
+	                                }
 
-                                Spacer()
-                            }
-                            .padding(6)
-                            .background(Color(nsColor: .controlBackgroundColor).opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
-                        }
+	                                Spacer()
+
+	                                if item.nameZh.contains("屏幕录制") && !model.isScreenCapturePermissionGranted {
+	                                    Button(tr("请求授权", "Authorize", "許可")) {
+	                                        model.requestScreenRecordingPermission()
+	                                    }
+	                                    .buttonStyle(.borderedProminent)
+	                                    .controlSize(.mini)
+	                                } else if item.nameZh.contains("辅助功能") && !model.isAccessibilityPermissionGranted {
+	                                    Button(tr("请求授权", "Authorize", "許可")) {
+	                                        model.requestAccessibilityPermission()
+	                                    }
+	                                    .buttonStyle(.borderedProminent)
+	                                    .controlSize(.mini)
+	                                }
+	                            }
+	                            .padding(6)
+	                            .background(Color(nsColor: .controlBackgroundColor).opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+	                        }
                     }
 
                     // Legacy Helper Warning Banner
@@ -199,54 +210,6 @@ public struct SystemSectionView: View {
                     .disabled(model.isCheckingHealth)
 
                     Spacer()
-                }
-            }
-            .padding(6)
-        }
-    }
-
-    // MARK: - SteamDeck Spoofing Box
-
-    private var steamDeckSpoofBox: some View {
-        GroupBox(label:
-            HStack(spacing: 8) {
-                Label(tr("切换到 SteamDeck 主机名模式", "SteamDeck Mode Spoofing", "SteamDeck ホスト名偽装モード"), systemImage: "rectangle.2.swap")
-                    .font(.headline)
-                LiveStatusBadge(
-                    isSteamDeckActive ? .active : .idle,
-                    title: isSteamDeckActive ? tr("已伪装为 SteamDeck", "Spoofed as SteamDeck", "SteamDeckに偽装中") : tr("原生 Mac 主机名", "Native Mac Hostname", "Mac標準ホスト名")
-                )
-            }
-        ) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(tr("部分游戏的反作弊系统对 SteamDeck 开放后门，将 Mac 主机名临时伪装为 steamdeck 可绕过限制直接进入游戏。",
-                        "Some anti-cheat systems whitelist SteamDeck. Temporarily spoofing macOS hostname to 'steamdeck' allows games to run.",
-                        "一部のゲームのアンチチートはSteamDeck向けに制限を緩和しています。Macのホスト名を一時的に「steamdeck」に偽装することで互換性を向上させます。"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Divider()
-
-                HStack {
-                    Button {
-                        model.toggleSteamDeck()
-                    } label: {
-                        Label(
-                            isSteamDeckActive ? tr("恢复为原始主机名", "Restore Original Hostname", "元のホスト名に復元") : tr("一键开启 SteamDeck 伪装", "Enable SteamDeck Spoofing", "SteamDeck偽装を有効化"),
-                            systemImage: isSteamDeckActive ? "arrow.counterclockwise" : "shield.lefthalf.filled"
-                        )
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(isSteamDeckActive ? .red : .purple)
-                    .controlSize(.regular)
-
-                    Spacer()
-
-                    if let backup = model.configuration.hostnameBackup {
-                        Text(tr("原始名称：\(backup.computerName)", "Original: \(backup.computerName)", "元の名前：\(backup.computerName)"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
                 }
             }
             .padding(6)

@@ -47,7 +47,6 @@ import Testing
     var configuration = AppConfiguration()
     configuration.defaultPaths = ["/tmp/Game Bottle's Data"]
     configuration.hostnameBackup = HostnameBackup(computerName: "Iven Mac", hostName: "iven-mac", localHostName: "iven-mac")
-    configuration.customWallpaperPath = "/tmp/wallpaper.png"
     try await store.save(configuration)
     let loaded = try await store.load(importLegacy: false)
     #expect(loaded == configuration)
@@ -59,7 +58,6 @@ import Testing
     let configuration = try JSONDecoder().decode(AppConfiguration.self, from: data)
     #expect(!configuration.automaticallyRestoreMountsOnLaunch)
     #expect(configuration.restorableDiskMounts.isEmpty)
-    #expect(configuration.customWallpaperPath == nil)
     #expect(configuration.recentMetalHUDApps.isEmpty)
     #expect(configuration.hoYoWaitSeconds == 15)
     #expect(configuration.excludesSensitiveCacheFiles)
@@ -109,44 +107,6 @@ import Testing
     #expect(loaded.defaultPaths.count == configuration.defaultPaths.count)
     #expect(loaded.defaultPaths.first == "/tmp/Games-1")
     #expect(loaded.defaultPaths.last == "/tmp/Games-1000")
-}
-
-@Test func wallpaperServiceImportsAndRemovesManagedWallpapersOnly() throws {
-    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-    let wallpaperDirectory = root.appendingPathComponent("Wallpapers", isDirectory: true)
-    let source = root.appendingPathComponent("source.png")
-    let external = root.appendingPathComponent("external.png")
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-    try Data([0, 1, 2]).write(to: source)
-    try Data([3, 4, 5]).write(to: external)
-
-    let service = WallpaperService(wallpaperDirectory: wallpaperDirectory)
-    let first = try service.importWallpaper(from: source)
-    #expect(FileManager.default.fileExists(atPath: first.path))
-    #expect(first.deletingLastPathComponent().standardizedFileURL == wallpaperDirectory.standardizedFileURL)
-
-    let removedExternal = try service.removeManagedWallpaper(at: external.path)
-    #expect(!removedExternal)
-    #expect(FileManager.default.fileExists(atPath: external.path))
-
-    let removedManaged = try service.removeManagedWallpaper(at: first.path)
-    #expect(removedManaged)
-    #expect(!FileManager.default.fileExists(atPath: first.path))
-}
-
-@Test func wallpaperServiceReimportRemovesPreviousManagedWallpaper() throws {
-    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-    let wallpaperDirectory = root.appendingPathComponent("Wallpapers", isDirectory: true)
-    let source = root.appendingPathComponent("source.jpg")
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-    try Data([6, 7, 8]).write(to: source)
-
-    let service = WallpaperService(wallpaperDirectory: wallpaperDirectory)
-    let first = try service.importWallpaper(from: source)
-    let second = try service.importWallpaper(from: source, replacing: first.path)
-
-    #expect(!FileManager.default.fileExists(atPath: first.path))
-    #expect(FileManager.default.fileExists(atPath: second.path))
 }
 
 @Test func automaticMountMatchingPrefersStableVolumeUUIDAndFallsBackToIdentifier() {
@@ -800,11 +760,45 @@ actor MockRunner: CommandRunning {
 
 @Test func navigationCategoryProvidesJapaneseTitles() {
     #expect(NavigationCategory.overview.titleJa == "概要とステータス")
+    #expect(NavigationCategory.frameGen.titleJa == "超解像と補フレーム")
     #expect(NavigationCategory.metalHUD.titleJa == "Metal HUD 設定")
     #expect(NavigationCategory.gameBoost.titleJa == "ゲーム高速化・起動")
     #expect(NavigationCategory.storage.titleJa == "ストレージとセーブ")
     #expect(NavigationCategory.system.titleJa == "システムと設定")
     #expect(NavigationCategory.about.titleJa == "情報と謝辞")
+}
+
+@Test func scalingModelsAndSettingsRoundTrip() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let store = ConfigurationStore(configurationURL: root.appendingPathComponent("configuration.json"))
+    var config = AppConfiguration()
+    config.scalingSettings = ScalingSettings(
+        enabled: true,
+        frameGenMode: .extrapolation3x,
+        renderScale: .scale67,
+        qualityProfile: .ultra,
+        aaMode: .smaa,
+        casEnabled: true,
+        sharpness: 0.75,
+        sceneCutDetectionEnabled: true,
+        dynamicResolutionScaling: true,
+        syntheticCursorEnabled: true,
+        hudEnabled: true,
+        targetWindowBundleID: "com.example.game",
+        targetWindowName: "Demo Game"
+    )
+    try await store.save(config)
+
+    let loaded = try await store.load(homeURL: root)
+    #expect(loaded.scalingSettings.frameGenMode == .extrapolation3x)
+    #expect(loaded.scalingSettings.frameGenMode.isExtrapolation)
+    #expect(loaded.scalingSettings.frameGenMode.multiplier == 3)
+    #expect(loaded.scalingSettings.renderScale == .scale67)
+    #expect(loaded.scalingSettings.aaMode == .smaa)
+    #expect(ScalingAAMode.allCases.contains(.taa))
+    #expect(ScalingAAMode.taa.titleEn == "TAA (Temporal)")
+    #expect(loaded.scalingSettings.sharpness == 0.75)
+    #expect(loaded.scalingSettings.targetWindowName == "Demo Game")
 }
 
 

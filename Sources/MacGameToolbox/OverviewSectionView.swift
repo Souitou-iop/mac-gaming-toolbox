@@ -21,12 +21,15 @@ public struct OverviewSectionView: View {
             // Live Stats Strip
             liveStatsStrip
 
-            // Quick Boost Cards
+            // Quick Boost Cards (3x2 Grid)
             VStack(alignment: .leading, spacing: 14) {
                 Text(tr("快捷工具箱", "Quick Actions", "クイックツール"))
                     .font(.headline)
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 280), spacing: 16)], spacing: 16) {
+                    // Frame Gen & Scaling Card
+                    quickFrameGenCard
+
                     // Metal HUD Card
                     quickMetalHUDCard
 
@@ -38,11 +41,11 @@ public struct OverviewSectionView: View {
 
                     // SteamDeck Spoof Card
                     quickSteamDeckCard
+
+                    // HoYoGames Launch Assistant Card
+                    quickHoYoCard
                 }
             }
-
-            // HoYo Assistant Banner if running or available
-            quickHoYoBanner
         }
     }
 
@@ -85,6 +88,48 @@ public struct OverviewSectionView: View {
     }
 
     // MARK: - Quick Action Boxes
+
+    private var quickFrameGenCard: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Label(tr("画质超分与补帧", "Scaling & Frame Gen", "超解像と補フレーム"), systemImage: "sparkles.tv")
+                        .font(.headline)
+                        .foregroundStyle(model.isScalingActive ? .purple : .primary)
+                    Spacer()
+                    Toggle("", isOn: Binding(
+                        get: { model.isScalingActive },
+                        set: { _ in model.toggleScaling() }
+                    ))
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                }
+
+                Text(tr("零延迟硬件补帧、MetalFX 超分与 CAS 锐化", "Zero-latency hardware FG & MetalFX upscaling.", "ゼロ遅延ハードウェア補正とMetalFX超解像。"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Divider()
+
+                HStack(spacing: 8) {
+                    Button(tr("进入调优…", "Tune…", "詳細設定…")) {
+                        onNavigateToSection?(.frameGen)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+
+                    if let currentWindowID = model.selectedWindowID,
+                       let win = model.availableWindows.first(where: { $0.id == currentWindowID }) {
+                        Text(win.appName)
+                            .font(.caption2.bold())
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+            }
+            .padding(4)
+        }
+    }
 
     private var quickMetalHUDCard: some View {
         GroupBox {
@@ -219,7 +264,7 @@ public struct OverviewSectionView: View {
                     .controlSize(.small)
 
                     Button(tr("详情…", "Details…", "詳細…")) {
-                        onNavigateToSection?(.system)
+                        onNavigateToSection?(.gameBoost)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -229,34 +274,46 @@ public struct OverviewSectionView: View {
         }
     }
 
-    private var quickHoYoBanner: some View {
+    private var quickHoYoCard: some View {
         GroupBox {
-            HStack(spacing: 12) {
-                Image(systemName: "gamecontroller.fill")
-                    .font(.title2)
-                    .foregroundStyle(.purple)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(tr("HoYoGames 启动帮助", "HoYoGames Launch Assistant", "HoYoGames 起動アシスタント"))
-                        .font(.subheadline.bold())
-                    Text(tr("临时劫持 hosts 解决启动校验失败，启动后自动恢复网络环境", "Assists launching HoYoGames on Mac by temporarily routing validation endpoints.", "hostsを一時的に切り替えて認証エラーを回避し、起動後に自動復元します。"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Label(tr("HoYoGames 启动帮助", "HoYoGames Assistant", "HoYoGames 起動補助"), systemImage: "gamecontroller.fill")
+                        .font(.headline)
+                        .foregroundStyle(model.isHoYoAssistantRunning ? .green : .purple)
+                    Spacer()
+                    if model.isHoYoAssistantRunning {
+                        ProgressView()
+                            .controlSize(.mini)
+                    }
                 }
 
-                Spacer()
+                Text(tr("临时路由 hosts 解决验证失败，启动后自动恢复", "Temporarily routes hosts to fix launch check.", "hostsを一時的に切り替えて認証エラーを回避。"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
-                if model.isHoYoAssistantRunning {
-                    Button(tr("取消运行", "Cancel", "キャンセル"), role: .destructive) {
-                        model.cancelHoYoAssistant()
+                Divider()
+
+                HStack(spacing: 8) {
+                    if model.isHoYoAssistantRunning {
+                        Button(tr("取消运行", "Cancel", "キャンセル"), role: .destructive) {
+                            model.cancelHoYoAssistant()
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    } else {
+                        Button(tr("开始运行", "Start", "開始")) {
+                            model.startHoYoAssistant()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.purple)
+                        .controlSize(.small)
                     }
-                    .controlSize(.small)
-                } else {
-                    Button(tr("开始运行", "Start", "開始")) {
-                        model.startHoYoAssistant()
+
+                    Button(tr("更多设置…", "Settings…", "設定…")) {
+                        onNavigateToSection?(.gameBoost)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.purple)
+                    .buttonStyle(.bordered)
                     .controlSize(.small)
                 }
             }
